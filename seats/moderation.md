@@ -175,10 +175,6 @@ authority publishes today:
 This is alpha software and the contract is candid about the distance
 between spec and code. The gaps most worth knowing:
 
-- **The end-to-end consent loop isn't closed yet.** The
-  mandate-registration endpoint is implemented and tested, but the iOS
-  client doesn't register mandates and `apple/` doesn't POST them, so
-  jurisdiction is currently seeded by hand.
 - **New-holder claims can't be authenticated.** A device's new owner is,
   by definition, not the mandated identity — the claim path exists but
   is honesty-based and capped, not proof.
