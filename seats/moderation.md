@@ -175,17 +175,29 @@ authority publishes today:
 This is alpha software and the contract is candid about the distance
 between spec and code. The gaps most worth knowing:
 
-- **New-holder claims can't be authenticated.** A device's new owner is,
-  by definition, not the mandated identity — the claim path exists but
-  is honesty-based and capped, not proof.
-- **Canonical JSON is by construction, not by spec.** Both sides remove
-  signature fields structurally and sort keys by UTF-8 byte order; the
-  agreement is pinned by tests between these two implementations, not
-  written down as a standalone spec. (Beware: Foundation's
-  `JSONSerialization` sorts keys case-insensitively and will produce
-  bytes the authority can't reproduce.)
+- **New-holder claims on a case can't be authenticated.** A device's
+  new owner is, by definition, not the mandated identity, so the
+  in-case claim path is honesty-based and capped. The separate
+  device-recovery path is stronger: a claim signed by the claimant's
+  *new* key, verified out-of-band and decided by a human moderator,
+  ending in a signed, single-use recovery grant the interface
+  enforces — proof of key possession and human judgment, though still
+  not cryptographic proof the device changed hands.
+- **Canonical JSON is pinned by tests, not by a standalone spec.** The
+  contract states the rule in prose — remove signature fields
+  structurally, sort keys by UTF-8 byte order, serialize without
+  escaping slashes — and all three codebases pin it with tests, but a
+  self-contained canonical-form spec doesn't exist yet. If you're
+  writing a new client, beware the two Foundation traps: `JSONSerialization`
+  sorts keys case-insensitively and `JSONEncoder` escapes slashes by
+  default; the iOS app routes every signing form through one canonical
+  encoder to dodge both.
 - **External appeal routing isn't built.** A manifest can name an
-  external appellate authority, but nothing routes to it yet.
+  external appellate authority — and must, for any class with a
+  permanent ban term — but nothing routes appeals to it yet; a
+  deployment declaring one forwards by hand.
+- **No CI on the moderation repo yet.** The test suites are extensive,
+  but they only run when someone runs them.
 
 ## Next steps
 

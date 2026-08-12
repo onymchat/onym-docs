@@ -448,10 +448,13 @@ authority that quietly does nothing, plus the rules with no undo:
 | ignore `undeliverableVerdicts` | notices aren't reaching the interface, and every ban on those cases is refused |
 
 And a client-side trap worth telling your integrators about: signing
-bytes must be canonicalized with keys sorted by **UTF-8 byte order**.
-Foundation's `JSONSerialization` sorts case-insensitively and produces
-bytes the authority can't reproduce — every signature from such a
-client fails.
+bytes must be canonicalized with keys sorted by **UTF-8 byte order**
+and serialized **without escaping slashes**. Foundation's
+`JSONSerialization` sorts case-insensitively and `JSONEncoder` escapes
+slashes by default — either one produces bytes the authority can't
+reproduce, and every signature from such a client fails. The iOS app
+routes all signing forms through a single canonical encoder for
+exactly this reason.
 
 ## Reference deployment
 
