@@ -1,66 +1,167 @@
 # Moderation
 
-Consent-bound authorities that receive signed reports, run a case with
-notice and a response window, and issue signed verdicts an interface
-executes as durable per-device marks.
+Moderation in Onym works differently from what you may be used to. There
+is no platform trust-and-safety team with power over everyone. Instead,
+**anyone can run a moderation authority**, and an authority only has
+power over people who explicitly agreed to its published terms — before
+any dispute existed.
+
+Here's the whole idea in one paragraph: when a user joins through an
+interface (an app), they sign a **mandate** — a small consent document
+that names one authority and pins the exact terms it published at that
+moment. Later, if someone who received abusive content reports it, the
+authority opens a **case**, notifies the accused, waits out a response
+window the accused agreed to, and then a human moderator decides. The
+decision is a signed **verdict**. The authority itself cannot punish
+anyone — it hands the verdict to the interface, which executes it as a
+durable **mark** on the offending device. If the authority never
+decides, the case is dismissed automatically. Silence can never become
+a punishment.
 
 **Contract:** [`moderation/Moderation.md`](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation.md)
 · profiles: [DeviceCheck](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation-DeviceCheck.md),
 [device recall](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation-Device-Recall.md)
 **Code:** [`onym-moderation`](https://github.com/onymchat/onym-moderation) (Rust)
 
-## The split
+Want to operate one yourself? Jump straight to
+[Run your own authority](run-your-own-authority.md).
 
-The seat is two services, meant for **two different operators**. They
-share no library — they agree on bytes, and each pins that agreement
-with its own tests.
+## The words you'll keep seeing
 
-| | `authority/` | `apple/` |
-|---|---|---|
-| Holds | verdict signing key, procedure, judgment | the Apple DeviceCheck key |
-| Can | open, decide, sign | read and write device bits |
-| Cannot | write a mark — no code path exists | originate a verdict |
+| Term | What it means |
+|---|---|
+| **Authority** | An independently operated judgment service. It publishes terms, hears cases, and signs verdicts. Anyone may run one; authorities compete to be chosen. |
+| **Interface** | The app vendor's enforcement service. It holds the platform keys (Apple DeviceCheck, Play Integrity) and is the only party that can write device marks. |
+| **Manifest** | The authority's published terms: which violations it judges, how long you have to respond, how long bans last, how to appeal. Signed, and pinned byte-for-byte by every mandate. |
+| **Mandate** | A user's signed, interface-countersigned consent to one authority under one exact manifest. No mandate, no jurisdiction — full stop. |
+| **Case** | One open matter per accused person per violation class. Later reports about the same thing join the existing case instead of opening new ones. |
+| **Verdict** | A signed, reasoned, expiring decision: open-case, dismiss, or ban. The only thing that can ever move a mark. |
+| **Mark** | A per-device bit the interface writes when executing a verdict: `case-open` or `banned`. Marks survive app reinstalls because they live with the device platform, not the app. |
 
-An authority that could write marks, or an interface that could
-originate verdicts, collapses the seat.
+## Two services, two operators — on purpose
 
-## Authority API
+The seat is deliberately split into two services that are meant to be
+run by **different organizations**:
 
-| | | |
-|---|---|---|
-| `GET` | `/manifest.json` | published terms, verbatim bytes (+ `.sig`, detached Ed25519) |
-| `POST` | `/v1/mandates` | interface registers a user's mandate |
-| `POST` | `/v1/reports` | signed report with authenticity proofs |
-| `POST` | `/v1/cases/:id/respond` | the accused's response |
-| `POST` | `/v1/cases/:id/appeal` | appeal, or new-holder claim |
-| `GET` | `/v1/cases/:id/status` | party credential required |
-| `POST` | `/v1/cases/:id/decide` | moderator judgment (bearer token) |
-| `POST` | `/v1/verdicts/:ref/requeue` | retry a repaired delivery refusal |
-| `GET` | `/admin` | moderator panel |
-| `GET` | `/health` | signing key, manifest hash, delivery backlog |
+- **`authority/`** holds the verdict signing key and the judgment. It
+  can open cases, decide them, and sign verdicts. It has *no code path*
+  that writes a device mark.
+- **`apple/`** (the interface's enforcement backend) holds the Apple
+  DeviceCheck key. It can read and write device bits — but it can only
+  do so when executing a verdict that validates against the terms the
+  user consented to. It cannot originate a verdict.
 
-`decide` is the only path from a report to a sanction and it requires a
-human's token. There is no automatic escalation.
+They share no library. They agree on bytes over the wire, and each side
+pins that agreement with its own tests. An authority that could write
+marks, or an interface that could invent verdicts, would collapse the
+whole design — one party would again hold both judgment and enforcement.
 
-`query-status` credentials travel in `X-Onym-Key`, `X-Onym-Timestamp`,
-`X-Onym-Signature`; the signature covers `query-status:<caseId>:<timestamp>`
-and expires in five minutes. Never in the URI, never in an access log.
-A case id is not a credential.
+## How a case flows
 
-## Interface API
+1. **Consent, long before any trouble.** At onboarding the user signs a
+   mandate naming the authority; the interface countersigns it and the
+   authority stores it. This is what gives the authority jurisdiction.
+2. **A report arrives.** Only someone who *received* the content can
+   report it, and only by disclosing what they received along with an
+   authenticity proof — a signature by the accused over that exact
+   content. The authority never scans anything and cannot ask for "the
+   whole conversation." Content without a proof is just a complaint.
+3. **The case opens and the accused is notified.** The authority signs
+   an interim `open-case` verdict. The interface sets a `case-open`
+   mark and shows the accused a notice: what class, what evidence, and
+   the two deadlines they agreed to — the response window and the
+   decision deadline.
+4. **The accused responds — or doesn't.** Responses are accepted even
+   late. Answering early never shortens the window; a ban is refused
+   until the full consented window has elapsed.
+5. **A human decides.** A moderator reviews the case and dismisses or
+   bans, always with signed reasoning. Deciding is the only path from a
+   report to a sanction, and it requires a human's token — there is no
+   automatic escalation. (An optional local model can *triage* cases,
+   but its recommendation only becomes a decision in a mode the
+   manifest itself must declare.)
+6. **The verdict travels.** The authority delivers the signed verdict
+   to the interface, together with the exact manifest bytes the
+   accused's mandate pinned. The interface validates everything
+   mechanically — signature, keys, class, deadlines — and only then
+   moves the mark.
+7. **Appeal, expiry, or default dismissal.** Bans carry an appeal
+   window and an expiry date measured from execution; the interface
+   clears the mark at expiry on the verdict's own authority. And if the
+   decision deadline passes with no decision at all, the case is
+   **dismissed by default** and the mark cleared. An authority that
+   stalls loses the case, never the accused.
 
-| | | |
-|---|---|---|
-| `POST` | `/v1/enroll` | first session → the vendor-local `deviceBinding` a mandate carries |
-| `POST` | `/v1/mandates/countersign` | interface countersignature over the user's mandate |
-| `POST` | `/v1/gate-check` | reconcile the bits → `clear` / `caseOpen` / `banned` / `checkRequired` |
-| `POST` | `/v1/verdicts` | validate mechanically, store, execute or queue |
-| `POST` | `/v1/recover` | redeem a moderator-issued recovery grant |
-| `GET` | `/v1/write-log` | append-only hash-chained log, with chain verification |
-| `GET` | `/health` | DeviceCheck configured? enforcement on? interface public key |
+## The promises
 
-Verdicts arrive as an envelope, not a bare verdict — the manifest travels
-as exact bytes because the mandate pins them:
+These are the refusals the design is built around — each one closes a
+familiar abuse:
+
+- **No jurisdiction without consent.** Reports are accepted only
+  against an accused whose mandate names this authority, from a
+  reporter whose own mandate names it too. Anything else is refused as
+  `no_jurisdiction`. A moderator imposed after the offense would be
+  chosen by the accuser.
+- **No evidence without authenticity.** Every disclosed item must
+  verify against the accused's key. Screenshots and hearsay don't open
+  cases.
+- **No sanction before notice.** Every notice must have reached the
+  interface and the full response window must have elapsed before a ban
+  can even be entered.
+- **Undecided is dismissal.** Every case carries a decision deadline
+  from the manifest, and the default at that deadline is dismissal with
+  the mark cleared. A stalled case can never hold a device hostage.
+- **Degrade toward blocking, never toward silence.** If the interface
+  loses its DeviceCheck credentials, the gate answers `checkRequired`
+  for everyone rather than quietly going unmoderated.
+- **Reports are free, and reporting is never paid.** No bounties, no
+  per-ban revenue — an authority may only charge interfaces flat or
+  per-report-adjudicated fees, so it earns nothing from opening weak
+  cases or banning eagerly.
+
+## The API at a glance
+
+Full request shapes, authentication schemes, and error codes live in the
+[authority README](https://github.com/onymchat/onym-moderation/blob/main/authority/README.md);
+this is the map.
+
+**Authority** (run by the judgment operator):
+
+| Route | What it's for |
+|---|---|
+| `GET /manifest.json` | The published terms, served byte-for-byte (`.sig` alongside is a detached Ed25519 signature) |
+| `POST /v1/mandates` | An interface registers a user's countersigned mandate |
+| `POST /v1/reports` | A signed report with authenticity proofs |
+| `PUT /v1/evidence-blobs/:sha256` | Image evidence upload (JPEG/PNG, ≤ 4 MiB) |
+| `POST /v1/cases/:id/respond` | The accused's response |
+| `POST /v1/cases/:id/appeal` | An appeal, or a new-device-holder claim |
+| `GET /v1/cases/:id/status` | Case status, for parties only |
+| `POST /v1/cases/:id/decide` | The moderator's judgment (bearer token) |
+| `POST /v1/verdicts/:ref/requeue` | Retry a verdict the interface refused, after repair |
+| `GET /admin` | The human moderator panel |
+| `GET /health` | Signing key, manifest hash, delivery backlog |
+
+Party credentials for status queries travel in `X-Onym-Key`,
+`X-Onym-Timestamp`, `X-Onym-Signature` headers — never in the URI, so
+they never land in an access log. The signature covers
+`query-status:<caseId>:<timestamp>` and expires after five minutes.
+Knowing a case id proves nothing; it is not a credential.
+
+**Interface** (run by the app vendor):
+
+| Route | What it's for |
+|---|---|
+| `POST /v1/enroll` | First session → the device binding a mandate will carry |
+| `POST /v1/mandates/countersign` | Countersigns the user's mandate |
+| `POST /v1/gate-check` | Reconciles device bits → `clear` / `caseOpen` / `banned` / `checkRequired` |
+| `POST /v1/verdicts` | Receives, validates, and executes or queues a verdict |
+| `POST /v1/recover` | Redeems a moderator-issued recovery grant |
+| `GET /v1/write-log` | Append-only, hash-chained log of every mark write |
+| `GET /health` | DeviceCheck configured? enforcement on? interface public key |
+
+Verdicts arrive wrapped in an envelope, because the interface must judge
+them against the terms the user actually consented to — not whatever the
+authority publishes today:
 
 ```json
 {
@@ -69,44 +170,30 @@ as exact bytes because the mandate pins them:
 }
 ```
 
-## Refusals worth knowing
+## Honest limits
 
-- **No jurisdiction without consent** — reports are accepted only against
-  an accused who signed a mandate naming this authority, from a reporter
-  whose own mandate names it. Otherwise `no_jurisdiction`.
-- **No evidence without authenticity** — every disclosed item verifies
-  against the accused's key. Content without a proof is a complaint.
-- **No sanction before notice** — a ban is refused until the consented
-  response window has *elapsed*. Answering early does not shorten it.
-- **Degrade toward blocking** — with no DeviceCheck credentials the gate
-  answers `checkRequired` for everyone, never "unmoderated".
+This is alpha software and the contract is candid about the distance
+between spec and code. The gaps most worth knowing:
 
-## Run
+- **The end-to-end consent loop isn't closed yet.** The
+  mandate-registration endpoint is implemented and tested, but the iOS
+  client doesn't register mandates and `apple/` doesn't POST them, so
+  jurisdiction is currently seeded by hand.
+- **New-holder claims can't be authenticated.** A device's new owner is,
+  by definition, not the mandated identity — the claim path exists but
+  is honesty-based and capped, not proof.
+- **Canonical JSON is by construction, not by spec.** Both sides remove
+  signature fields structurally and sort keys by UTF-8 byte order; the
+  agreement is pinned by tests between these two implementations, not
+  written down as a standalone spec. (Beware: Foundation's
+  `JSONSerialization` sorts keys case-insensitively and will produce
+  bytes the authority can't reproduce.)
+- **External appeal routing isn't built.** A manifest can name an
+  external appellate authority, but nothing routes to it yet.
 
-```sh
-cd authority && cargo test
-export AUTHORITY_SIGNING_SEED=$(openssl rand -hex 32)
-cp manifest.example.json /tmp/manifest.json
-AUTHORITY_MANIFEST_PATH=/tmp/manifest.json \
-AUTHORITY_STORE_PATH=/tmp/authority.sqlite cargo run
-# read `signingKey` from /health, set it as `operator` in the manifest, restart
-```
+## Next steps
 
-```sh
-cd apple && cargo test
-MODERATION_INTERFACE_SIGNING_SEED=$(openssl rand -hex 32) \
-MODERATION_STORE_PATH=/tmp/moderation.sqlite cargo run
-curl -s localhost:8080/health
-```
-
-## Gaps
-
-- **Nothing calls `accept-mandate` yet.** The endpoint is implemented and
-  tested, but `apple/` does not POST the countersigned mandate and the iOS
-  client has no registration operation. Jurisdiction is seeded by hand;
-  the end-to-end consent path is not closed.
-- **The new-holder claim cannot be authenticated** — a new owner is by
-  definition not the mandated identity.
-- **Canonical JSON is unspecified.** Both sides remove signature fields
-  structurally and sort keys by UTF-8 byte order; the agreement is by
-  construction between these two implementations, not by spec.
+- [Run your own authority](run-your-own-authority.md) — the step-by-step
+  operator guide.
+- [Deployment](../deployment.md) — how the Onym reference deployment
+  brings both services up on one box.
