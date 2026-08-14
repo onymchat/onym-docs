@@ -133,10 +133,11 @@ What exists, honestly:
   Rust CLI that signs, verifies, and chains manifests and snapshots,
   and publishes the byte-pinned conformance fixtures clients must
   match — after the merged gap-closure sweep
-  ([#3](https://github.com/onymchat/onym-discovery/pull/3)) that
-  covers nearly all of the profile's §10 vectors, including the chain
-  and equivocation cases — plus deployment templates and a publish
-  runbook for a future provider. A manual deploy workflow for
+  ([#3](https://github.com/onymchat/onym-discovery/pull/3)), most of
+  the profile's §10 vectors are published as fixtures and the rest
+  (the chain-behavior cases) are covered by in-repo tests, with the
+  privacy trace discharged as a client obligation — plus deployment
+  templates and a publish runbook for a future provider. A manual deploy workflow for
   `discovery.onym.app` is in review
   ([#4](https://github.com/onymchat/onym-discovery/pull/4)).
 - **Client packages are written and in review**: iOS
@@ -165,7 +166,10 @@ outrun it:
   rejection, the detached-`.sig` verify path, and cross-catalog
   equivocation / source-conflict detection are implemented and
   fixtured in `onym-discovery`, but neither client package runs them
-  yet.
+  yet. The clients also still approximate an expired provider manifest
+  as a plain refresh failure, don't surface entry-vs-manifest field
+  conflicts under their proper error, and leave several of the
+  profile's error codes unreachable.
 - **The intermediate-fetch continuity walk is implemented nowhere.**
   Every implementation degrades a forward jump straight to
   accept-with-note without first trying the retained-sibling fetches
