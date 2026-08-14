@@ -73,7 +73,7 @@ in the `moderation` submodule, with this deployment's operator key and
 manifest hash — existing mandates stay bound to the old terms and fresh
 consent is required.
 
-Caddy serves the nine policy documents from
+Caddy serves the ten policy documents from
 `moderation/authority/published/` as `text/markdown; charset=utf-8`, one
 per term and per violation class, with no `#fragment` links. They are
 served verbatim rather than rendered: these are the bytes that were signed
@@ -131,6 +131,24 @@ publish manifests only.
 
 `AUTHORITY_INTERFACE_KEY` is a Variable, not a Secret: it is a public key,
 and it does not exist until the interface has booted once.
+
+## Discovery provider (in review)
+
+Nothing above serves `discovery.onym.app` yet — the signed
+[discovery](seats/discovery.md) provider has no deployment, and the
+hostname does not resolve. A manual deploy workflow is in review as
+[`onym-discovery` #4](https://github.com/onymchat/onym-discovery/pull/4):
+a `workflow_dispatch` `deploy.yml` that builds the reference CLI, signs
+and chains the snapshot onto the previously **published** one (a
+genesis publish is an explicit input, not a guess), verifies everything
+exactly as a client would before a byte leaves the runner, then rsyncs
+the static tree onto the **same droplet** and adds a Caddy vhost for
+it. Signing seeds (`DISCOVERY_OPERATOR_SEED` and the courier/blossom
+seat seeds) live as Actions secrets, with a `skip_signing` path for
+operators who sign locally instead; the job runs in a `production`
+environment that must be configured with required reviewers before the
+first dispatch, or it gates nothing. Until that PR merges and runs,
+this section describes a review branch, not the deployment.
 
 ## Operating
 

@@ -25,7 +25,7 @@ the wire surface, and the command that starts it.
 | [Notary](seats/notary.md) | [`onym-contracts`](https://github.com/onymchat/onym-contracts) (5 Soroban contracts) + [`onym-relayer`](https://github.com/onymchat/onym-relayer) | Stellar testnet, `relayer.onym.app` |
 | [Courier](seats/courier.md) | strfry (Nostr) + blossom-server, wired in [`onym-infra`](https://github.com/onymchat/onym-infra) | `nostr.onym.app`, `blossom.onym.app` |
 | [Identity](seats/identity.md) | [`onym-sdk-swift`](https://github.com/onymchat/onym-sdk-swift) / [`onym-sdk-kotlin`](https://github.com/onymchat/onym-sdk-kotlin), consumed by the clients | on device |
-| [Discovery](seats/discovery.md) | GitHub release assets across four repos (operational) + [`onym-discovery`](https://github.com/onymchat/onym-discovery) reference CLI for the signed-catalog profile | `releases/latest/download/*` |
+| [Discovery](seats/discovery.md) | GitHub release assets across three repos (operational) + [`onym-discovery`](https://github.com/onymchat/onym-discovery) reference CLI for the signed-catalog profile | `releases/latest/download/*` |
 
 [Deployment](deployment.md) brings the server-side seats up on one box.
 
@@ -36,8 +36,9 @@ Contract only, no code in any Onym repository: **recovery trustee**,
 **acquisition**, **sponsor**, **recruitment**. The **interface** seat has
 client scaffolds ([`onym-ios`](https://github.com/onymchat/onym-ios),
 [`onym-android`](https://github.com/onymchat/onym-android)) but does not
-yet meet its contract. The **bank** and **association naming** seats are
-open pull requests against `onym-system`.
+yet meet its contract. The **bank** seat is an open pull request against
+`onym-system`; the **association naming** seat is named in that repo's
+overview but has no contract text on any open branch yet.
 
 Nothing here is production-grade: alpha, unaudited, and several
 load-bearing pieces are open work.
