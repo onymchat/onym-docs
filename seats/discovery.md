@@ -24,7 +24,7 @@ release assets migrate onto, and it is documented after.
 
 ## Today's operational path: release assets
 
-What runs today is the mechanism, not the seat: four GitHub release
+What runs today is the mechanism, not the seat: five GitHub release
 assets that clients fetch at
 `https://github.com/onymchat/<repo>/releases/latest/download/<asset>`.
 A release asset, **not** a path in the tree — editing `main` changes
@@ -131,8 +131,15 @@ What exists, honestly:
 - **A reference implementation runs**:
   [`onym-discovery`](https://github.com/onymchat/onym-discovery) is a
   Rust CLI that signs, verifies, and chains manifests and snapshots,
-  and publishes the first conformance fixtures clients must match
-  byte-for-byte, plus deployment templates for a future provider.
+  and publishes the byte-pinned conformance fixtures clients must
+  match — after the merged gap-closure sweep
+  ([#3](https://github.com/onymchat/onym-discovery/pull/3)), most of
+  the profile's §10 vectors are published as fixtures and the rest
+  (the chain-behavior cases) are covered by in-repo tests, with the
+  privacy trace discharged as a client obligation — plus deployment
+  templates and a publish runbook for a future provider. A manual deploy workflow for
+  `discovery.onym.app` is in review
+  ([#4](https://github.com/onymchat/onym-discovery/pull/4)).
 - **Client packages are written and in review**: iOS
   ([#244](https://github.com/onymchat/onym-ios/pull/244)–[#247](https://github.com/onymchat/onym-ios/pull/247))
   and Android
@@ -146,22 +153,31 @@ The profile's own gaps section is candid, and this page will not
 outrun it:
 
 - **No provider is deployed.** `discovery.onym.app` serves nothing yet:
-  no operator keys, no signed catalog. The release assets above remain
-  the only operational path, and migrating them onto signed catalogs is
-  explicitly listed as remaining work.
+  no operator keys, no signed catalog. The deploy workflow that would
+  change that is in review
+  ([#4](https://github.com/onymchat/onym-discovery/pull/4)); until it
+  lands and runs, the release assets above remain the only operational
+  path, and migrating them onto signed catalogs is explicitly listed
+  as remaining work.
 - **The policy documents are unwritten.** Every catalog must pin an
   inclusion/ranking policy and a privacy profile by digest; those
   documents do not exist yet.
-- **Client packages trail the spec in places.** The open PRs verify
-  signatures, pin keys, and detect rollbacks and forks, but neither
-  client yet rejects a future-dated snapshot, filters catalogs by
-  audience, or tells the user how many entries it silently skipped.
-- **Some specified behavior is implemented nowhere yet** — the
-  forward-jump continuity walk, the policy-transition grace window,
-  and several disclosure obligations (every current decoder even skips
-  entries carrying the profile's warning `status` field). The
-  profile's §11 enumerates them honestly; the fixtures that will prove
-  them (§10 items 6–14) are also still to be written.
+- **Some checks live only in the reference CLI.** Duplicate-key
+  rejection, the detached-`.sig` verify path, and cross-catalog
+  equivocation / source-conflict detection are implemented and
+  fixtured in `onym-discovery`, but neither client package runs them
+  yet. The clients also still approximate an expired provider manifest
+  as a plain refresh failure, don't surface entry-vs-manifest field
+  conflicts under their proper error, and leave several of the
+  profile's error codes unreachable.
+- **The intermediate-fetch continuity walk is implemented nowhere.**
+  Every implementation degrades a forward jump straight to
+  accept-with-note without first trying the retained-sibling fetches
+  the profile's §6 requires, so a provably broken chain hidden behind
+  a jump is indistinguishable from a retention failure. The profile's
+  §11 enumerates this and the smaller remainders honestly — it is the
+  single place to check before trusting any status claim, including
+  this page's.
 
 ## Next steps
 

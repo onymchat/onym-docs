@@ -175,10 +175,14 @@ authority publishes today:
 This is alpha software and the contract is candid about the distance
 between spec and code. The gaps most worth knowing:
 
-- **The end-to-end consent loop isn't closed yet.** The
-  mandate-registration endpoint is implemented and tested, but the iOS
-  client doesn't register mandates and `apple/` doesn't POST them, so
-  jurisdiction is currently seeded by hand.
+- **The interface's signature enforcement defaults off.** The service's
+  `MODERATION_ENFORCE_SIGNATURES` ships `false` (the reference
+  deployment sets it `true`); the iOS client, by contrast, enforces
+  both manifest and verdict signatures unconditionally. Context: the
+  consent loop itself closed only recently — the iOS client now
+  registers the finalized, interface-countersigned mandate with the
+  authority from its consent flow — so treat the loop as freshly
+  wired, not battle-tested.
 - **New-holder claims can't be authenticated.** A device's new owner is,
   by definition, not the mandated identity — the claim path exists but
   is honesty-based and capped, not proof.

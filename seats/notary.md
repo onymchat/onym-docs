@@ -110,9 +110,15 @@ different operator.
 The relayer's operator holds real but narrow powers. In the accepted
 design it declares them in a signed manifest served byte-for-byte,
 adopting the pattern the [moderation authority](moderation.md) already
-uses for its terms; today the relayer serves no such manifest, and the
-powers live only in the contract documents and the code. Either way,
-the governing invariant:
+uses for its terms. The relayer code now supports this
+([#13](https://github.com/onymchat/onym-relayer/pull/13), merged):
+point `RELAYER_OPERATOR_MANIFEST` at a manifest signed offline with
+the `onym-discovery` CLI and it is verified at boot and served
+byte-for-byte at `GET /manifest.json`, with the detached signature at
+`GET /manifest.json.sig`. The live relayer has no manifest configured
+yet — both routes answer 404 — so today the powers still live only in
+the contract documents and the code. Either way, the governing
+invariant:
 
 > The operator's key can pay for, submit, and gate the creation of
 > group state. It can never author a group transition.
