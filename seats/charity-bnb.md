@@ -44,11 +44,16 @@ The interface splits into two classes the contract keeps distinct:
 - **Operator-attested writes** — campaign registration, revision
   advance (by exactly one, no skips or rewinds), status changes
   mirroring the abstract campaign machine
-  (`active/paused/closed/revoked`, no exit from closed or revoked),
-  policy registration, and receipt/report anchors. Gated on an
-  operator-admin address baked immutably into the bytecode. These are
-  tamper-evident operator *statements*: the chain proves who said it
-  and when, not that it is true.
+  (`active/paused/closed/revoked`, no exit from closed or revoked —
+  registration itself is the machine's draft→active edge, drafts stay
+  off-chain), policy registration, and receipt/report anchors. Gated
+  on an operator-admin address baked immutably into the bytecode.
+  These are tamper-evident operator *statements*: the chain proves who
+  said it and when, not that it is true. The status gate scopes to
+  *new authorizations* only — receipt, disbursement, and report
+  anchors record already-authorized operations and stay writable after
+  a campaign pauses, closes, or is revoked, so ending a campaign can
+  never truncate its own audit trail.
 - **Proof-authorized writes** — `anchorAidClaim`, sender-agnostic.
   Anyone may submit it; validity comes from a PLONK/BN254 eligibility
   proof checked against the contract's own state, never from
