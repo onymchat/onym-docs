@@ -99,7 +99,10 @@ is a *new* group.
 Today [Discovery](discovery.md) lists Soroban relayers — a name, a URL,
 and supported Stellar networks. In the accepted design it grows into a
 catalog of notaries run by **different parties**, each declaring
-exactly which chains it supports in a signed manifest. Some operators
+exactly which chains it supports in a signed manifest. The first such
+manifest is live — the reference relayer's, declaring its one Stellar
+testnet network and indexed by the signed catalog at
+`discovery.onym.app` (see [Discovery](discovery.md)). Some operators
 will support only one — an honest, declared condition — and the app
 will offer only combinations your chosen operator actually declares.
 It must never paper over a gap by silently switching you to a
@@ -107,18 +110,27 @@ different operator.
 
 ## The operator is a clerk, not a king
 
-The relayer's operator holds real but narrow powers. In the accepted
-design it declares them in a signed manifest served byte-for-byte,
-adopting the pattern the [moderation authority](moderation.md) already
-uses for its terms. The relayer code now supports this
-([#13](https://github.com/onymchat/onym-relayer/pull/13), merged):
-point `RELAYER_OPERATOR_MANIFEST` at a manifest signed offline with
-the `onym-discovery` CLI and it is verified at boot and served
-byte-for-byte at `GET /manifest.json`, with the detached signature at
-`GET /manifest.json.sig`. The live relayer has no manifest configured
-yet — both routes answer 404 — so today the powers still live only in
-the contract documents and the code. Either way, the governing
-invariant:
+The relayer's operator holds real but narrow powers, and it now
+declares them in a signed manifest served byte-for-byte — the pattern
+the [moderation authority](moderation.md) already uses for its terms.
+This is live: `https://relayer.onym.app/manifest.json` serves the
+signed manifest, with the detached signature at
+`GET /manifest.json.sig`, verified at boot from wherever
+`RELAYER_OPERATOR_MANIFEST` points
+([#13](https://github.com/onymchat/onym-relayer/pull/13)). Signing
+happens in CI
+([`sign-manifest.yml`](https://github.com/onymchat/onym-relayer/blob/main/.github/workflows/sign-manifest.yml)):
+the workflow signs the manifest source with the operator seed held in
+Actions secrets, commits the exact signed bytes to `main` under
+`manifest-signed/` so they are auditable in-repo, and then checks that
+the live endpoint serves **exactly** those bytes — byte-paranoid on
+purpose, because group bindings and entitlements pin the SHA-256 of
+the served manifest. A `verify-operator-manifest` subcommand runs the
+same check on any manifest/signature pair, and scheduled scripts watch
+for drift, expiry, and submitter funding. When `validUntil` passes
+(currently 2027-08-14), the service refuses to serve the stale bytes:
+both routes degrade to 404 until a re-signed manifest ships. The
+governing invariant:
 
 > The operator's key can pay for, submit, and gate the creation of
 > group state. It can never author a group transition.

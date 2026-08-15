@@ -132,23 +132,47 @@ publish manifests only.
 `AUTHORITY_INTERFACE_KEY` is a Variable, not a Secret: it is a public key,
 and it does not exist until the interface has booted once.
 
-## Discovery provider (in review)
+The relayer's signed [notary operator manifest](seats/notary.md) ships
+inside its image: `onym-relayer`'s `sign-manifest.yml` workflow signs
+in CI and commits the exact bytes under `manifest-signed/`, the
+Dockerfile copies them to `/srv/operator-manifest/`, and this repo's
+compose file points `RELAYER_OPERATOR_MANIFEST` at that copy. After a
+re-sign, bump the `relayer` submodule here and deploy; the signing
+workflow's byte-verification step then confirms
+`https://relayer.onym.app/manifest.json` serves exactly the committed
+bytes.
 
-Nothing above serves `discovery.onym.app` yet — the signed
-[discovery](seats/discovery.md) provider has no deployment, and the
-hostname does not resolve. A manual deploy workflow is in review as
-[`onym-discovery` #4](https://github.com/onymchat/onym-discovery/pull/4):
-a `workflow_dispatch` `deploy.yml` that builds the reference CLI, signs
-and chains the snapshot onto the previously **published** one (a
-genesis publish is an explicit input, not a guess), verifies everything
-exactly as a client would before a byte leaves the runner, then rsyncs
-the static tree onto the **same droplet** and adds a Caddy vhost for
-it. Signing seeds (`DISCOVERY_OPERATOR_SEED` and the courier/blossom
-seat seeds) live as Actions secrets, with a `skip_signing` path for
-operators who sign locally instead; the job runs in a `production`
-environment that must be configured with required reviewers before the
-first dispatch, or it gates nothing. Until that PR merges and runs,
-this section describes a review branch, not the deployment.
+## Discovery provider
+
+`discovery.onym.app` is live, but nothing in this repository serves it
+directly — the signed [discovery](seats/discovery.md) provider is
+published by `onym-discovery`'s own manual deploy workflow
+([#4](https://github.com/onymchat/onym-discovery/pull/4), merged; the
+genesis publish has run and the live catalog is at sequence 1). The
+`workflow_dispatch` `deploy.yml` builds the reference CLI, signs and
+chains the snapshot onto the previously **published** one (a genesis
+publish is an explicit input, not a guess), verifies everything exactly
+as a client would before a byte leaves the runner, rsyncs the static
+tree to `/var/www/discovery` on the **same droplet**, idempotently
+installs a Caddy vhost for it, and only then upserts the grey-cloud
+DNS record — so a mid-run failure never leaves a public name pointing
+at a half-configured host. Signing seeds (`DISCOVERY_OPERATOR_SEED`
+and the courier/blossom seat seeds) live as Actions secrets, with a
+`skip_signing` path for operators who sign locally instead; the job
+runs in a `production` environment gated by required reviewers.
+
+Two operational couplings with this repository's deploy:
+
+- **A deploy from this repository sweeps the discovery vhost away.**
+  `deploy.sh` rsyncs with `--delete`, which removes the Caddy compose
+  override the discovery deploy installed. After an `onym-infra`
+  deploy, re-dispatch the `onym-discovery` deploy workflow — it is
+  self-healing on re-run and puts the vhost back.
+- **The vhost step restarts the shared proxy.** Installing or
+  restoring the override recreates the Caddy container that fronts
+  every `onym.app` vhost, so open Nostr `wss://` connections drop and
+  clients must reconnect. The workflow announces the recreation in its
+  log before issuing it.
 
 ## Operating
 

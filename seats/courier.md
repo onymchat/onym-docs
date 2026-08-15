@@ -63,8 +63,12 @@ Base64, and send the plaintext MIME type for encrypted objects; returned
 descriptors are not fully verified.
 
 **Both** — `PaymentRequired`, `SeatEntitlement`, quota accounting, renewal,
-revocation and broker registration are unimplemented, and relay/provider
-configuration binds no operator, limits, retention, or privacy terms.
+revocation and broker registration are unimplemented. Signed operator
+manifests for both couriers now exist — `discovery.onym.app` hosts and
+indexes `onym-courier` and `onym-blossom` manifests declaring the operator
+key, size limits, retention class, and privacy profile (see
+[Discovery](discovery.md)) — but the legacy lists the shipping clients
+actually read still bind no operator, limits, retention, or privacy terms.
 Conformance rests on mirrored app tests rather than one fixture suite.
 
 These are interoperability and security gaps, not alternate wire semantics
