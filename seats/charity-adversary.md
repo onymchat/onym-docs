@@ -1,6 +1,6 @@
 # Charity on a public chain: the adversary's view
 
-*Threat-model page, draft 0.1 — 15 August 2026. **Nothing analyzed
+*Threat-model page, draft 0.2 — 15 August 2026. **Nothing analyzed
 here runs**: no contract, no circuits, no fixtures — see the
 [BNB binding's honest status](charity-bnb.md#honest-status). The
 observer below inspects the binding as specified; every "what they
@@ -57,9 +57,9 @@ confirm a guess against, and `Charity.md` §6.9 requires small counts
 in *reports* to be bucketed or suppressed. But §6.9 does not cover
 anchors, and whether the operator should batch anchors on a declared
 schedule — and at what minimum batch — is an explicitly open question
-in the profile (§14.5 as drafted in
-[onym-system#35](https://github.com/onymchat/onym-system/pull/35)),
-with a written analysis required before
+in the
+[merged profile](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
+(§14.5), with a written analysis required before
 batching may be *claimed* as a mitigation. Until then: **no timing
 mitigation exists at the anchor layer**.
 
@@ -130,8 +130,7 @@ real-world events, at whatever precision the two timestamps allow.
 **Mitigation.** Undecided, and therefore **not claimed**: anchoring
 on a declared schedule rather than immediately after payout would
 coarsen the correlation, but it is the same open question as batching
-(profile §14.5 as drafted) and must not be promised before it is
-analyzed and
+(profile §14.5) and must not be promised before it is analyzed and
 specified. What *is* specified: the anchor carries no amount and no
 rail reference, so the join gains a time, not a sum or an account.
 

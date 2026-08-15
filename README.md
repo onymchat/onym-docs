@@ -38,7 +38,7 @@ Contract only, no code in any Onym repository: **recovery trustee**,
 **acquisition**, **sponsor**, **recruitment**. The
 **[charity](seats/charity.md)** seat has draft contracts, a
 [Stellar/Soroban plan](seats/charity-stellar.md), a
-[drafted BNB Chain specification](seats/charity-bnb.md), an
+[merged BNB Chain specification](seats/charity-bnb.md), an
 [adversary-view threat model](seats/charity-adversary.md), and a
 [role-binding table](seats/charity-roles.md) documented in this book,
 but no code. The **interface** seat has

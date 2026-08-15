@@ -1,6 +1,6 @@
 # Charity
 
-*Seat page, draft 0.2 — 15 August 2026.*
+*Seat page, draft 0.3 — 15 August 2026.*
 
 Charitable aid runs on trust, and trust is exactly what the people
 involved can't afford to spend. A donor wants to know their money
@@ -28,9 +28,10 @@ beneficiary PII** in any public record.
 the messenger-side application profile. Both are drafts.
 **Implementations:** [Stellar/Soroban](charity-stellar.md) — a
 **plan**, its profile unwritten ·
-[BNB Chain](charity-bnb.md) — a **drafted specification**
-([onym-system#35](https://github.com/onymchat/onym-system/pull/35),
-unmerged). No charity code exists in any Onym repository.
+[BNB Chain](charity-bnb.md) — a **merged specification**
+([`UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)).
+No charity code exists in any Onym repository, and neither binding
+waits for the other to deliver.
 
 This page stays deliberately free of any one blockchain, payment rail,
 or aid program — so does the contract, explicitly: it requires no
@@ -209,7 +210,7 @@ profiles, and two are planned:
   profile document is unwritten.
 - **[BNB Chain](charity-bnb.md)** — the EVM sibling: Solidity
   contracts with toolchain-generated PLONK **BN254** verifiers. Its
-  profile is [drafted and proposed](https://github.com/onymchat/onym-system/pull/35)
+  profile is [merged](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
   — interface, errors, encodings, fixtures — with the code
   explicitly nonexistent.
 

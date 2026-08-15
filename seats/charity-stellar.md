@@ -1,6 +1,6 @@
 # Charity — Stellar/Soroban (plan)
 
-*Seat implementation page, draft 0.2 — 15 August 2026.*
+*Seat implementation page, draft 0.3 — 15 August 2026.*
 
 This page describes an implementation that **does not exist yet**.
 There are no charity contracts in [`onym-contracts`](https://github.com/onymchat/onym-contracts),
@@ -56,7 +56,7 @@ payouts) is a later, separate `financialBindings` profile with its
 own finality, refund, and reversal mapping — the donation state
 machine's `refund-pending`/`refunded`/`reversed` states all need
 concrete Stellar semantics before that binding may be declared.
-The [BNB profile](https://github.com/onymchat/onym-system/pull/35)
+The [merged BNB profile](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
 states the same boundary for the EVM side in normative language.
 
 ## Reusing the notary stack
@@ -99,7 +99,7 @@ What the chain actually verifies, in the contract's terms:
    the abstract operations table places it, with no separate
    verify-then-consume window. (An earlier revision of this page said
    only "spent on first use", locating the consumption point nowhere;
-   the drafted BNB profile (summarized on
+   the merged BNB profile (summarized on
    [the BNB page](charity-bnb.md)) settles the claim-time reading and
    the Stellar profile must match it.)
 3. **Commitment integrity** — receipt and report commitments anchor
@@ -145,8 +145,8 @@ Everything below is unbuilt; the order is the dependency chain:
 - [Notary — Stellar](notary-stellar.md) — the running infrastructure
   this plan rides on.
 - [BNB Chain](charity-bnb.md) — the same obligations re-proved over
-  BN254 for the EVM, with the drafted profile this plan's profile
-  must mirror.
+  BN254 for the EVM, with the merged profile this plan's profile
+  must mirror. Neither binding waits for the other to deliver.
 - [The adversary's view](charity-adversary.md) — what a public trail
   exposes; most rows apply to Stellar with a smaller explorer
   ecosystem.
