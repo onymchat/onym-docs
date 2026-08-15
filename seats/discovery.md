@@ -217,7 +217,7 @@ outrun it:
 ## Next steps
 
 - [Notary](notary.md) — the relayers today's `relayers.json` points at,
-  and the operator manifests the signed catalogs will index.
+  and the operator manifest the live catalog already indexes.
 - [Moderation](moderation.md) — the authorities `authorities.json`
   feeds into the iOS picker.
 - [Deployment](../deployment.md) — how the reference deployment brings

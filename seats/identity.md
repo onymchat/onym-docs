@@ -57,8 +57,9 @@ is gitignored, so re-run the generator after pulling.
 
 ## Status
 
-The clients are being grown in small hand-reviewable chunks. Today that
-means the persistent reactive `IdentityRepository` and the recovery-phrase
-backup flow exist; chat, invites and rotation do not. Identity rotation and
-recovery are named in the whitepaper as open work — treat the vault as
-create-and-back-up only.
+The clients are being grown in small hand-reviewable chunks. The
+persistent reactive `IdentityRepository` and the recovery-phrase backup
+flow exist, and the clients now carry chat, group invites and join
+requests on top of them. Identity **rotation** still does not: rotation
+and recovery are named in the whitepaper as open work — a key, once
+created, can be backed up but not yet rotated.
