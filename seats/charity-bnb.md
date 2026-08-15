@@ -187,7 +187,10 @@ under one key; and a three-layer PII fixture that plants names, IBANs,
 emails, and addresses in the input objects and greps every emitted log
 and written storage slot for them — zero hits to pass, with sealed
 recipient payloads asserted absent from calldata entirely. The full
-named list, precise enough to implement from, is profile §13.
+named list, precise enough to implement from, is profile §13 (section
+numbers as drafted in
+[onym-system#35](https://github.com/onymchat/onym-system/pull/35);
+they can shift on merge).
 
 For what a block-explorer adversary can still see and infer — anchor
 counts, timing, the single gas-paying submitter — and what the UI must
@@ -209,7 +212,7 @@ disclose before anyone signs, see the
   is underway.
 - The abstract contracts it answers to (`Charity.md`,
   `UI-Charity.md`) are merged drafts (0.1, August 2026); the profile
-  flags one wording question in `Charity.md` §6.8 (campaign-scoped
+  flags (as drafted) one wording question in `Charity.md` §6.8 (campaign-scoped
   fields in public claim anchors) for upstream decision rather than
   assuming an answer.
 

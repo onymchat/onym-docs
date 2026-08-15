@@ -57,7 +57,9 @@ confirm a guess against, and `Charity.md` §6.9 requires small counts
 in *reports* to be bucketed or suppressed. But §6.9 does not cover
 anchors, and whether the operator should batch anchors on a declared
 schedule — and at what minimum batch — is an explicitly open question
-in the profile (§14.5), with a written analysis required before
+in the profile (§14.5 as drafted in
+[onym-system#35](https://github.com/onymchat/onym-system/pull/35)),
+with a written analysis required before
 batching may be *claimed* as a mitigation. Until then: **no timing
 mitigation exists at the anchor layer**.
 
@@ -128,7 +130,8 @@ real-world events, at whatever precision the two timestamps allow.
 **Mitigation.** Undecided, and therefore **not claimed**: anchoring
 on a declared schedule rather than immediately after payout would
 coarsen the correlation, but it is the same open question as batching
-(profile §14.5) and must not be promised before it is analyzed and
+(profile §14.5 as drafted) and must not be promised before it is
+analyzed and
 specified. What *is* specified: the anchor carries no amount and no
 rail reference, so the join gains a time, not a sum or an account.
 
@@ -142,10 +145,12 @@ correlate them.
 
 ### 5. The single gas-paying submitter
 
-**What they see.** One relayer EOA signs and pays for every
-submission it serves, across every deployment it serves — charity
-anchors and notary group operations alike, one visible operational
-graph.
+**What they see.** One relayer EOA signs and pays per EVM deployment
+it serves — and the operator's signed manifest publicly binds that
+EOA to the same ed25519 operator identity as its other-chain
+deployments (today, the Stellar notary submitter). The linkage across
+chains is the manifest, by design; the linkage within a chain is the
+EOA itself. Either way, one inspectable operational graph.
 
 **What they can infer.** Which deployments share an operator; the
 operator's full activity rhythm; and that a claim was submitted
@@ -220,7 +225,8 @@ contract already requires.
 
 ## Reading this page honestly
 
-Five of the seven rows offer no mitigation at their layer: rows 3, 5,
+Five of the seven rows offer no *effective* mitigation at their
+layer: rows 3, 5,
 and 6 say **none** outright — two of them deliberately (the
 claim→disbursement join *is* the audit trail; the operator's public
 history is the accountability), one as an accepted, declared property

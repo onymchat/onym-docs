@@ -21,11 +21,11 @@ first, which binds nobody until a signed record exists.
 | User application | None conforming. The Onym client scaffolds ([`onym-ios`](https://github.com/onymchat/onym-ios), [`onym-android`](https://github.com/onymchat/onym-android)) contain no charity module implementing the `UI-Charity.md` port. | — | **Unassigned** (planned home: the Onym clients) |
 | Charity operator | None. | — | **Unassigned.** No party has published a signed `CharityDeployment`, and this book names no candidate: an operator exists when its signature does. |
 | Organization credential issuer | None. | — | **Unassigned.** No issuer, no `TrustPolicy` naming one, no credential schema in any Onym repository. |
-| Eligibility issuer | None. | — | **Unassigned.** The [BNB profile](charity-bnb.md) specifies what an issuer must publish (an accumulator root per policy); nobody publishes one. |
-| Financial provider | None bound. Fiat rails under the financial provider's own legal authority are the assumed starting point on both chain pages — a role the charity operator may also hold, but then as a *named* second role, not by default — and *assumed* is not *bound*: no `financialBindings` entry exists because no deployment exists. | — | **Unassigned**, and partly **out of scope by design** — both chain profiles bind notary and eligibility roles only. |
-| Notary | None for charity. The reference relayer operator holds the **notary-seat** operator role on Stellar today, with the signed manifest at `relayer.onym.app/manifest.json` as evidence — but that manifest declares Stellar notary support only. It declares no charity profile, so no charity notary exists. | [Live manifest](notary-stellar.md#the-live-operator-manifest) (notary seat only) | **Unassigned** (planned home: the same relayer operator, by adding the charity profile entries its manifest currently, honestly, lacks) |
+| Eligibility issuer | None. | — | **Unassigned.** The drafted BNB profile ([onym-system#35](https://github.com/onymchat/onym-system/pull/35)) specifies what an issuer must publish (an accumulator root per policy); nobody publishes one. |
+| Financial provider | None bound. Fiat rails under the financial provider's own legal authority are the assumed starting point on both chain pages — a role the charity operator may also hold, but then as a *named* second role, not by default — and *assumed* is not *bound*: no `financialBindings` entry exists because no deployment exists. | — | **Unassigned**, and partly **out of scope by design** — the drafted BNB profile binds notary and eligibility roles only; the [Stellar page](charity-stellar.md) assumes the same scope and has no profile to bind it yet. |
+| Notary | None for charity. The reference relayer operator holds the **notary-seat** operator role on Stellar today, with the signed manifest at `relayer.onym.app/manifest.json` as evidence — but that manifest declares Stellar notary support only. It declares no charity profile, so no charity notary exists. | [`relayer.onym.app/manifest.json`](https://relayer.onym.app/manifest.json) (notary seat only; context: [the Stellar notary page](notary-stellar.md#the-live-operator-manifest)) | **Unassigned** (planned home: the same relayer operator, by adding the charity profile entries its manifest currently, honestly, lacks) |
 | Auditor / report issuer | None. | — | **Unassigned.** Fund-flow reports name their issuer by signature; no issuer, no reports. |
-| Discovery / association registry | The signed catalog at `discovery.onym.app` runs and lists what operator manifests declare. Since no manifest declares a charity deployment, it lists none — correct behavior, not a gap. | [Discovery](discovery.md) | **Assigned for its own seat; nothing charity-shaped to list yet** |
+| Discovery / association registry | The signed catalog at `discovery.onym.app` runs and lists what operator manifests declare. Since no manifest declares a charity deployment, it lists none — correct behavior, not a gap. | [`discovery.onym.app`](https://discovery.onym.app) (context: [Discovery](discovery.md)) | **Assigned for its own seat; nothing charity-shaped to list yet** |
 
 One row is load-bearing for reading the rest: the only signed
 artifact that exists anywhere in this table is the notary-seat
@@ -55,7 +55,8 @@ role, so a reader can verify it record by record:
   `EligibilityPolicy` names *its* issuers, and a fund-flow report
   names its own `issuer` — three fields that may hold one key three
   times, each a separate claim carrying separate responsibility;
-- on-chain, the [BNB profile](charity-bnb.md) enforces the split
+- on-chain, the drafted BNB profile (summarized on
+  [the BNB page](charity-bnb.md)) enforces the split
   mechanically: operator-attested entrypoints are gated on the admin
   address, claim anchoring is sender-agnostic and proof-authorized —
   so even the concentrated party *cannot* exercise the beneficiary's

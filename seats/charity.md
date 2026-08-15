@@ -26,9 +26,11 @@ beneficiary PII** in any public record.
 — the technology-free boundary this page summarizes — and
 [`charity/UI-Charity.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity.md),
 the messenger-side application profile. Both are drafts.
-**Implementations:** [Stellar/Soroban](charity-stellar.md) ·
-[BNB Chain](charity-bnb.md) — both are **plans**; no charity code
-exists in any Onym repository yet.
+**Implementations:** [Stellar/Soroban](charity-stellar.md) — a
+**plan**, its profile unwritten ·
+[BNB Chain](charity-bnb.md) — a **drafted specification**
+([onym-system#35](https://github.com/onymchat/onym-system/pull/35),
+unmerged). No charity code exists in any Onym repository.
 
 This page stays deliberately free of any one blockchain, payment rail,
 or aid program — so does the contract, explicitly: it requires no
