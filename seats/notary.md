@@ -17,20 +17,26 @@ is **pinned**: no app update, price change, or catalog edit can quietly
 move a group to a different notary.
 
 **Contract:** [`notary/UI-Notary.md`](https://github.com/onymchat/onym-system/blob/main/notary/UI-Notary.md)
-· profiles: [Stellar/Soroban](https://github.com/onymchat/onym-system/blob/main/notary/UI-Notary-Stellar.md) (running today),
-[BNB Chain](https://github.com/onymchat/onym-system/blob/main/notary/UI-Notary-BNB.md) (accepted design, unbuilt)
-**Code:** [`onym-contracts`](https://github.com/onymchat/onym-contracts) (on-chain)
-· [`onym-relayer`](https://github.com/onymchat/onym-relayer) (submission)
+— the technology-free boundary this page describes.
+**Implementations:** [Stellar/Soroban](notary-stellar.md) (the
+reference implementation, running today) ·
+[BNB Chain](notary-bnb.md) (a merged design with an implementation
+plan — nothing built yet).
+
+This page stays deliberately free of any one blockchain. A notary is
+not "the Stellar thing" — it is a role, and the whole point of
+specifying it abstractly is that several concrete notaries, on several
+chains, run by several parties, can hold it at once.
 
 ## The words you'll keep seeing
 
 | Term | What it means |
 |---|---|
-| **Commitment** | A 32-byte opaque value that stands for the group's membership and secrets. The chain stores it; only members can open it. |
+| **Commitment** | A 32-byte opaque value that stands for the group's membership and secrets. The notary stores it; only members can open it. |
 | **Epoch** | The group's revision counter. Every accepted change increments it by exactly one — no gaps, no rewinds. |
 | **Flavor** | The governance rule chosen at creation: who is allowed to advance the group's state. Five exist (see below). |
 | **Proof** | A zero-knowledge proof that the proposed new commitment follows from the old one under the flavor's rule — without revealing who acted. |
-| **Circuit type** | Which proof system and chain family the proofs target. Today `plonk` on Stellar (BLS12-381); the accepted BN254 variant targets BNB Chain. |
+| **Circuit type** | Which proof system and chain family the proofs target. Today `plonk` over BLS12-381 on Stellar; the planned BNB profile uses `plonk-bn254-kzg`. |
 | **Binding** | The group's pinned record of *its* notary: chain, contract, flavor, circuit type, genesis evidence. Sticky by design. |
 | **Operator** | The party running the relayer service. It pays fees and may gate group *creation* — it can never advance a group's state. |
 | **Relayer** | The operator's HTTP front door. It submits your operation to the chain and pays the network fee so your wallet doesn't have to exist. |
@@ -48,19 +54,15 @@ who should be able to advance the group.
 | `oligarchy` | up to 2¹¹ | up to 32 | a K-of-N quorum of admins; the admin roster stays hidden after creation |
 | `tyranny` | up to 2¹¹ | 1 | one pinned admin, proven without revealing who they are across groups |
 
-These flavor names are the wire's `contractType` values; each is
-implemented by the matching `plonk/sep-<flavor>` contract crate in
-`onym-contracts`.
-
-Every deployed contract also has a deployment-time operator admin whose
-only power is a switch gating new group *creation*. It cannot touch any
-existing group. Member caps come from circuit depth baked into the
-verifying keys, not from an on-chain counter anyone could edit.
+The flavor is a governance *predicate*, not a chain feature: an
+implementation profile re-expresses the same five rules in whatever
+proof system its chain verifies, and re-targeting the curve must not
+change what they prove.
 
 ## How a state change flows
 
 1. **Read first.** Your app fetches the group's current commitment and
-   epoch from the chain and verifies what it read.
+   epoch from the canonical system and verifies what it read.
 2. **Prove locally.** Your device builds the new commitment and a
    zero-knowledge proof that the transition is allowed under the
    group's flavor. Secrets and witnesses never leave the device.
@@ -78,59 +80,47 @@ verifying keys, not from an on-chain counter anyone could edit.
 
 ## Choosing where your proofs land
 
-Today every group lands on **Stellar/Soroban** — TurboPLONK proofs
-over BLS12-381, verified by Soroban host functions. It is the only
-chain with running code, so for now there is no choice to make.
+A notary operator may run deployments on **several blockchains at
+once**, and the contract says *you* choose — at group creation,
+alongside flavor — which one receives your group's proofs. The
+selection is two-dimensional: **which notary operator**, and **which of
+that operator's backends** gets the proofs. A multi-chain operator is
+several notary deployments under one accountable seat, not one notary
+spanning chains — each backend keeps separate state, and a group lives
+on exactly one.
 
-The accepted design adds one. A notary operator may run deployments on
-**several blockchains at once**, and the contract says *you* will
-choose — at group creation, alongside flavor — which one receives your
-group's proofs. The first addition is **BNB Chain**: the same
-governance rules re-proved over BN254 and verified by standard Solidity
-verifiers. It is a published design; none of it is built yet.
-
-The design requires the choice be shown with its real consequences —
+The contract requires the choice be shown with its real consequences —
 which public ledger your group's (opaque) activity lands on, its fees,
-its finality — not just a curve name. Once made, it is pinned into the
-group binding like everything else. Groups do not migrate between
-chains; until a governed migration protocol exists, a re-created group
-is a *new* group.
+its finality, its metadata exposure — not just a curve name. Once made,
+it is pinned into the group binding like everything else. Groups do not
+migrate between chains; until a governed migration protocol exists, a
+re-created group is a *new* group. A joiner never chooses: the
+invitation carries the pinned binding and the joining client verifies
+it or refuses. Prover availability is a capability, not a preference —
+a client without the right prover refuses to join rather than
+substitute evidence.
 
-Today [Discovery](discovery.md) lists Soroban relayers — a name, a URL,
-and supported Stellar networks. In the accepted design it grows into a
-catalog of notaries run by **different parties**, each declaring
-exactly which chains it supports in a signed manifest. The first such
-manifest is live — the reference relayer's, declaring its one Stellar
-testnet network and indexed by the signed catalog at
-`discovery.onym.app` (see [Discovery](discovery.md)). Some operators
-will support only one — an honest, declared condition — and the app
-will offer only combinations your chosen operator actually declares.
+[Discovery](discovery.md) is how you find the choices. Today it lists
+Soroban relayers — a name, a URL, and supported Stellar networks — and
+the live signed catalog at `discovery.onym.app` already indexes the
+reference relayer's operator manifest. As more notaries appear, it
+grows into a catalog of operators run by **different parties**, each
+declaring exactly which chains it supports in its signed manifest.
+Some will support only one — an honest, declared condition — and the
+app offers only combinations your chosen operator actually declares.
 It must never paper over a gap by silently switching you to a
 different operator.
 
 ## The operator is a clerk, not a king
 
-The relayer's operator holds real but narrow powers, and it now
-declares them in a signed manifest served byte-for-byte — the pattern
-the [moderation authority](moderation.md) already uses for its terms.
-This is live: `https://relayer.onym.app/manifest.json` serves the
-signed manifest, with the detached signature at
-`GET /manifest.json.sig`, verified at boot from wherever
-`RELAYER_OPERATOR_MANIFEST` points
-([#13](https://github.com/onymchat/onym-relayer/pull/13)). Signing
-happens in CI
-([`sign-manifest.yml`](https://github.com/onymchat/onym-relayer/blob/main/.github/workflows/sign-manifest.yml)):
-the workflow signs the manifest source with the operator seed held in
-Actions secrets, commits the exact signed bytes to `main` under
-`manifest-signed/` so they are auditable in-repo, and then checks that
-the live endpoint serves **exactly** those bytes — byte-paranoid on
-purpose, because group bindings and entitlements pin the SHA-256 of
-the served manifest. A `verify-operator-manifest` subcommand runs the
-same check on any manifest/signature pair, and scheduled scripts watch
-for drift, expiry, and submitter funding. When `validUntil` passes
-(currently 2027-08-14), the service refuses to serve the stale bytes:
-both routes degrade to 404 until a re-signed manifest ships. The
-governing invariant:
+The relayer's operator holds real but narrow powers, and it declares
+them in a signed manifest served byte-for-byte at
+`GET /manifest.json` — the pattern the
+[moderation authority](moderation.md) already uses for its terms.
+Declared powers are exhaustive: a power not listed is a power the
+operator does not have. Group bindings and entitlements pin the
+SHA-256 of the manifest bytes, so changed terms mean a new manifest,
+never an edit in place. The governing invariant:
 
 > The operator's key can pay for, submit, and gate the creation of
 > group state. It can never author a group transition.
@@ -140,7 +130,8 @@ relayer), require payment, rate-limit, and flip the creation gate. It
 cannot advance any group's commitment, forge or substitute proofs, move
 a group's binding, or make an invalid operation valid by accepting
 money for it. These limits are enforced by the contract, not promised
-by policy.
+by policy. The reference relayer serves its signed manifest live —
+the [Stellar page](notary-stellar.md) documents the pipeline.
 
 ## The promises
 
@@ -159,85 +150,15 @@ by policy.
   witnesses live on the device. The chain sees commitments; the relayer
   sees ciphertext-shaped bytes and metadata it must declare.
 
-## Honest limits
+## Where the code is
 
-The contract documents are candid about the distance between spec and
-code; the gaps most worth knowing:
-
-- **The entire BNB path is unbuilt.** No Solidity contracts, no BN254
-  circuits, no EVM support in the relayer. The profile is an accepted
-  design whose gaps list is the work plan.
-- **Stellar write receipts are thin.** The relayer's success response
-  currently omits the transaction hash, so clients cannot yet run fully
-  independent transaction reconciliation from it.
-- **Payment is not wired.** The `PaymentRequired` / entitlement flow is
-  specified but unimplemented; today the relayer just pays and may
-  require a bearer token.
-- **Reads mostly trust the relayer.** Independent read-provider
-  selection and long-term evidence retention are specified, not built.
-- **A post-quantum circuit family** (`pq/`, Plonky3 + FRI) is in
-  progress and blocked on FRI host functions.
-
-## For developers
-
-The relayer speaks JSON over `POST /`:
-
-```json
-{
-  "network": "testnet",
-  "contractID": "C...",
-  "contractType": "anarchy",
-  "function": "update_commitment",
-  "payload": {
-    "group_id": "base64-or-hex-32-byte-group-id",
-    "proof": "base64-or-hex-1601-byte-proof",
-    "publicInputs": ["c-old", "epoch-old-be32", "c-new"]
-  }
-}
-```
-
-`network` accepts `testnet`, `public`, or `mainnet`. Byte fields may
-arrive as base64 or hex; `BytesN` arguments are forwarded to the chain
-as hex. `contractID` must be allowlisted for that `contractType` on
-that `network`; the allowlist is the cumulative
-`contracts-manifest.json` from the latest `onym-contracts` release,
-pulled at boot and every 15 minutes (`POST /admin/refresh` with bearer
-auth forces it). Allowed functions:
-`create_group`, `create_oligarchy_group`, `update_commitment`,
-`verify_membership`, `get_commitment`, `get_history`, `bump_group_ttl`,
-tyranny-only `get_admin_commitment`, and — only when auth tokens are
-configured — the operator's `set_restricted_mode`.
-
-Build, fixtures, and release, in brief:
-
-```sh
-# contracts
-cd plonk/sep-anarchy && cargo build --release --target wasm32v1-none && cargo test --lib
-
-# relayer
-cp .env.example .env   # set RELAYER_SECRET_KEY
-./run.sh
-
-# regenerate proof fixtures deliberately
-cd plonk/prover && STELLAR_REGEN_FIXTURES=1 cargo test --release --lib \
-  plonk_verifier_fixtures_match_or_regenerate
-```
-
-Toolchains are pinned per crate via `rust-toolchain.toml`: plonk
-contracts 1.91.0 / `soroban-sdk 26.0.0-rc.1`, pq 1.95.0 /
-`soroban-sdk 26.0.0`, prover and `sep-*-ffi` 1.88.0.
-
-`plonk/verifier/tests/fixtures/` holds the baked verifying key and
-canonical proof/public-input bytes; CI re-bakes and byte-compares them
-on every PR, so prover drift fails the build. The mobile SDKs verify
-against the same SHA pins, so a divergence surfaces across all
-consumers.
-
-Releases run `gh workflow run release.yml -f tag=vX.Y.Z`: five WASMs
-built with `stellar contract build --optimize`, stamped with
-`--meta source_repo` and `--meta home_domain='onym.chat'`, deployed to
-testnet, per-op fees captured into the release body, and a republished
-cumulative `contracts-manifest.json`.
+- **[Stellar/Soroban](notary-stellar.md)** — the running reference
+  implementation: five Soroban contracts on testnet, the relayer at
+  `relayer.onym.app`, and the live CI-signed operator manifest. Every
+  group that exists today lands here.
+- **[BNB Chain](notary-bnb.md)** — the merged implementation profile
+  and its phased build plan. The design is settled; the code does not
+  exist.
 
 ## Next steps
 

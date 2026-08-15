@@ -22,7 +22,7 @@ the wire surface, and the command that starts it.
 | Seat | Reference implementation | Live at |
 |---|---|---|
 | [Moderation](seats/moderation.md) | [`onym-moderation`](https://github.com/onymchat/onym-moderation) — `authority/` + `apple/` | `authority.onym.app`, `moderation.onym.app` |
-| [Notary](seats/notary.md) | [`onym-contracts`](https://github.com/onymchat/onym-contracts) (5 Soroban contracts) + [`onym-relayer`](https://github.com/onymchat/onym-relayer) | Stellar testnet, `relayer.onym.app` |
+| [Notary](seats/notary.md) | [Stellar/Soroban](seats/notary-stellar.md): [`onym-contracts`](https://github.com/onymchat/onym-contracts) (5 Soroban contracts) + [`onym-relayer`](https://github.com/onymchat/onym-relayer); a [BNB implementation](seats/notary-bnb.md) is planned, unbuilt | Stellar testnet, `relayer.onym.app` |
 | [Courier](seats/courier.md) | strfry (Nostr) + blossom-server, wired in [`onym-infra`](https://github.com/onymchat/onym-infra) | `nostr.onym.app`, `blossom.onym.app` |
 | [Identity](seats/identity.md) | [`onym-sdk-swift`](https://github.com/onymchat/onym-sdk-swift) / [`onym-sdk-kotlin`](https://github.com/onymchat/onym-sdk-kotlin), consumed by the clients | on device |
 | [Discovery](seats/discovery.md) | Five GitHub release assets across three repos (operational) + [`onym-discovery`](https://github.com/onymchat/onym-discovery) reference CLI for the signed-catalog profile | `releases/latest/download/*` (what clients read), `discovery.onym.app` (signed catalog) |

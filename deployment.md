@@ -8,7 +8,7 @@ server-side seat up on one DigitalOcean droplet via Docker Compose.
 | Caddy | — | reverse proxy, automatic TLS |
 | strfry | `nostr.onym.app` | [courier — message](seats/courier.md) |
 | blossom | `blossom.onym.app` | [courier — blob](seats/courier.md) |
-| relayer | `relayer.onym.app` | [notary](seats/notary.md) |
+| relayer | `relayer.onym.app` | [notary — Stellar](seats/notary-stellar.md) |
 | moderation | `moderation.onym.app` | [moderation](seats/moderation.md) — enforcement |
 | authority | `authority.onym.app` | [moderation](seats/moderation.md) — judgment |
 
@@ -132,7 +132,7 @@ publish manifests only.
 `AUTHORITY_INTERFACE_KEY` is a Variable, not a Secret: it is a public key,
 and it does not exist until the interface has booted once.
 
-The relayer's signed [notary operator manifest](seats/notary.md) ships
+The relayer's signed [notary operator manifest](seats/notary-stellar.md) ships
 inside its image: `onym-relayer`'s `sign-manifest.yml` workflow signs
 in CI and commits the exact bytes under `manifest-signed/`, the
 Dockerfile copies them to `/srv/operator-manifest/`, and this repo's
