@@ -32,8 +32,12 @@ the wire surface, and the command that starts it.
 ## Not implemented
 
 Contract only, no code in any Onym repository: **recovery trustee**,
-**backup**, **charity**, **audit**, **arbitration**, **lead generation**,
-**acquisition**, **sponsor**, **recruitment**. The **interface** seat has
+**backup**, **audit**, **arbitration**, **lead generation**,
+**acquisition**, **sponsor**, **recruitment**. The
+**[charity](seats/charity.md)** seat has draft contracts and
+per-chain implementation plans ([Stellar/Soroban](seats/charity-stellar.md),
+[BNB Chain](seats/charity-bnb.md)) documented in this book, but no
+code. The **interface** seat has
 client scaffolds ([`onym-ios`](https://github.com/onymchat/onym-ios),
 [`onym-android`](https://github.com/onymchat/onym-android)) but does not
 yet meet its contract. The **bank** seat is an open pull request against
