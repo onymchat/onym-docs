@@ -1,5 +1,7 @@
 # Charity — Stellar/Soroban (plan)
 
+*Seat implementation page, draft 0.2 — 15 August 2026.*
+
 This page describes an implementation that **does not exist yet**.
 There are no charity contracts in [`onym-contracts`](https://github.com/onymchat/onym-contracts),
 no charity circuits, and no charity endpoints in the relayer. Read
@@ -43,14 +45,19 @@ must feed PII-shaped inputs and watch them be rejected. **Zero PII
 on-chain** is this profile's concrete rendering of the boundary's
 "zero intentional PII publication" invariant.
 
-The **financial binding** is deliberately not on this list at first.
-Fiat moves over regulated rails under the charity operator's own
-authority; the chain proves the procedure around it. A Stellar
-settlement rail (e.g. USDC payouts) is a later, separate
-`financialBindings` profile with its own finality, refund, and
-reversal mapping — the donation state machine's
-`refund-pending`/`refunded`/`reversed` states all need concrete
-Stellar semantics before that binding may be declared.
+The **financial binding** is deliberately not on this list. The
+charity contracts MUST NOT hold funds, mint assets, or execute
+transfers under this binding's profile ID; fiat moves over regulated
+rails under the financial provider's own legal authority, and the
+chain proves the procedure around it — an anchored receipt digest
+proves the operator anchored those bytes at that time, never that
+money moved or aid arrived. A Stellar settlement rail (e.g. USDC
+payouts) is a later, separate `financialBindings` profile with its
+own finality, refund, and reversal mapping — the donation state
+machine's `refund-pending`/`refunded`/`reversed` states all need
+concrete Stellar semantics before that binding may be declared.
+The [BNB profile](https://github.com/onymchat/onym-system/pull/35)
+states the same boundary for the EVM side in normative language.
 
 ## Reusing the notary stack
 
@@ -86,8 +93,14 @@ What the chain actually verifies, in the contract's terms:
 2. **Nullifier scope and uniqueness** — nullifiers are **campaign-
    and epoch-scoped**, stable across revisions within the same
    campaign and epoch (so a policy update cannot enable a second
-   claim), spent on first use, and by construction never a
-   cross-campaign or permanent beneficiary identifier.
+   claim), and by construction never a cross-campaign or permanent
+   beneficiary identifier. Consumption is atomic with claim
+   anchoring — the duplicate rule sits at `claim-aid`, exactly where
+   the abstract operations table places it, with no separate
+   verify-then-consume window. (An earlier revision of this page said
+   "spent on first use" at presentation; the drafted
+   [BNB profile](charity-bnb.md) settles the claim-time reading and
+   the Stellar profile must match it.)
 3. **Commitment integrity** — receipt and report commitments anchor
    the exact canonical bytes their signed off-chain objects hash to,
    so any application can verify a receipt against the chain without
@@ -130,5 +143,9 @@ Everything below is unbuilt; the order is the dependency chain:
 - [Charity](charity.md) — the abstract seat this binds.
 - [Notary — Stellar](notary-stellar.md) — the running infrastructure
   this plan rides on.
-- [BNB Chain plan](charity-bnb.md) — the same obligations re-proved
-  over BN254 for the EVM.
+- [BNB Chain](charity-bnb.md) — the same obligations re-proved over
+  BN254 for the EVM, with the drafted profile this plan's profile
+  must mirror.
+- [The adversary's view](charity-adversary.md) — what a public trail
+  exposes; most rows apply to Stellar with a smaller explorer
+  ecosystem.
