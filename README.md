@@ -13,9 +13,11 @@ Every seat is specified twice in
 contract (`X.md`) that is technology-free, and one or more implementation
 profiles (`X-<Technology>.md`) that map it onto a concrete stack.
 
-This book documents the seats that have **running reference code** today.
-It is not the specification — it is the map from a contract to the repo,
-the wire surface, and the command that starts it.
+This book documents the seats that have **running reference code**
+today, plus — clearly marked as plans — the seats whose build is
+designed but not started. It is not the specification — it is the map
+from a contract to the repo, the wire surface, and the command that
+starts it (or, for a plan, to the work that would).
 
 ## Implemented
 

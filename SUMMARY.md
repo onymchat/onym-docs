@@ -9,7 +9,7 @@
 * [Notary](seats/notary.md)
   * [Stellar/Soroban implementation](seats/notary-stellar.md)
   * [BNB Chain plan](seats/notary-bnb.md)
-* [Charity](seats/charity.md)
+* [Charity (plan)](seats/charity.md)
   * [Stellar/Soroban plan](seats/charity-stellar.md)
   * [BNB Chain plan](seats/charity-bnb.md)
 * [Courier](seats/courier.md)
