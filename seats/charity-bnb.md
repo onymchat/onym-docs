@@ -1,11 +1,10 @@
 # Charity — BNB Chain
 
-*Seat implementation page, draft 0.2 — 15 August 2026. Specification:
-drafted. Code: none — see [Honest status](#honest-status).*
+*Seat implementation page, draft 0.3 — 15 August 2026. Specification:
+merged. Code: none — see [Honest status](#honest-status).*
 
-**Profile:** [`charity/UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/pull/35)
-— drafted and proposed as an open pull request against `onym-system`,
-not yet merged. It binds the abstract
+**Profile:** [`charity/UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
+— merged in `onym-system` (draft 0.1). It binds the abstract
 [`charity/Charity.md`](https://github.com/onymchat/onym-system/blob/main/charity/Charity.md)
 boundary's **notary and eligibility bindings** to BNB Smart Chain
 (mainnet 56, testnet 97; opBNB explicitly out of scope). An EVM
@@ -75,7 +74,7 @@ and `CampaignRevisionAdvanced`, `CampaignStatusChanged`,
 lifecycle, by `claimDigest`, the public join between a claim and its
 disbursement. These are the names the
 [adversary page](charity-adversary.md) analyzes; they are defined by
-the drafted profile and would change only with it.
+the merged profile and would change only with it.
 
 ## Errors carry their own retry semantics
 
@@ -135,7 +134,10 @@ generation is automated and audited in widely used toolchains, and no
 hand-written verifier needs a bespoke audit. The cost is a real one —
 BN254 circuits, setup, and verifying keys separate from any future
 BLS12-381 Stellar sibling, and a cross-curve proof is invalid evidence
-in both directions, with fixtures required for both rejections.
+in both directions, with fixtures required for both rejections — one
+of which necessarily ships as a published vector with a
+counterpart-unimplemented marker until a Stellar sibling exists (see
+[Build order](#build-order)).
 
 Deployment identity is chain ID + contract address + runtime code
 hash, all three verified before first use; the verifier and admin
@@ -187,10 +189,8 @@ under one key; and a three-layer PII fixture that plants names, IBANs,
 emails, and addresses in the input objects and greps every emitted log
 and written storage slot for them — zero hits to pass, with sealed
 recipient payloads asserted absent from calldata entirely. The full
-named list, precise enough to implement from, is profile §13 (section
-numbers as drafted in
-[onym-system#35](https://github.com/onymchat/onym-system/pull/35);
-they can shift on merge).
+named list, precise enough to implement from, is
+[profile §13](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md#13-conformance-fixtures).
 
 For what a block-explorer adversary can still see and infer — anchor
 counts, timing, the single gas-paying submitter — and what the UI must
@@ -201,31 +201,55 @@ disclose before anyone signs, see the
 
 - **Nothing on this page runs.** No BN254 charity circuits, no
   Solidity, no EVM charity endpoints in the relayer, no fixtures. The
-  profile document exists only as a
-  [proposed draft in an open pull request](https://github.com/onymchat/onym-system/pull/35),
-  unmerged.
-- **Both build dependencies are themselves plans.** The
-  [Stellar charity build](charity-stellar.md) has no code, and the
-  [notary EVM backend](notary-bnb.md) this binding reuses is unbuilt —
-  this remains a plan two plans deep, documented so the dependency
-  order and the specification are on record, not because construction
-  is underway.
+  [profile](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
+  is merged — a specification, not code.
+- **Two shared unbuilt dependencies remain, both built once and
+  reused:** the relayer's **EVM backend** and the mobile Rust FFI's
+  **BN254 prover backend**. Both this binding and the
+  [notary EVM plan](notary-bnb.md) need each, neither build has
+  either, and whichever build reaches one first implements it for
+  both — the profile's §15 says "built once, not twice" in exactly
+  those terms. Delivery is *not* sequenced after the
+  [Stellar charity build](charity-stellar.md), which has no code and
+  no profile of its own yet.
 - The abstract contracts it answers to (`Charity.md`,
   `UI-Charity.md`) are merged drafts (0.1, August 2026); the profile
-  flags (as drafted) one wording question in `Charity.md` §6.8 (campaign-scoped
+  flags one wording question in `Charity.md` §6.8 (campaign-scoped
   fields in public claim anchors) for upstream decision rather than
   assuming an answer.
 
 ## Build order
 
-Strictly after the [Stellar phases](charity-stellar.md#the-plan-in-phases)
-prove the obligations against real campaigns: merge the profile;
-circuits (cross-checked against any BLS12-381 sibling with shared
-logical vectors); contracts plus generated verifiers, deployed
-immutably; the relayer's EVM backend, shared with the notary build
-rather than forked; then manifest, discovery listing, and the fixture
-suite green — declare, list, and prove, in that order, before any real
-campaign binds this deployment.
+BNB proceeds on its own dependency chain. The
+[Stellar plan](charity-stellar.md) is a sibling, not a gate — neither
+binding waits for the other:
+
+1. **Profile merged** —
+   [`charity/UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
+   landed in `onym-system`. Done; everything below is not.
+2. **Circuits** — the `membership-set-v1` BN254 constraint system,
+   setup, and verifying keys, publishing their logical vectors as they
+   land. The cross-curve cross-check binds whichever sibling profile
+   arrives *second*, in either direction.
+3. **Prover** — the BN254 PLONK backend in the mobile Rust FFI, built
+   once and shared with the [notary EVM plan](notary-bnb.md) exactly
+   like the relayer backend below; without it, no client can generate
+   the proof bytes the conformance chain starts from.
+4. **Contracts** — `cha-anchor` plus generated verifiers, deployed
+   immutably.
+5. **Relayer EVM backend** — built once and shared with the notary
+   EVM plan: whichever build reaches it first implements it, the
+   other reuses it. Charity must not fork its own EVM plumbing — and
+   must not wait for the notary build if charity reaches it first.
+6. **Declare, list, prove** — manifest entries, discovery listing, and
+   the fixture suite green, in that order, before any real campaign
+   binds this deployment.
+
+What independence costs, stated rather than hidden: until a Stellar
+sibling exists, the cross-curve rejection fixture ships one-directional
+(with the counterpart-unimplemented marker the profile specifies), and
+the proved-against-real-campaigns assurance must come from this
+binding's own testnet pilot.
 
 ## Next steps
 
