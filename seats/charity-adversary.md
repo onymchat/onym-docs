@@ -58,7 +58,7 @@ in *reports* to be bucketed or suppressed. But §6.9 does not cover
 anchors, and whether the operator should batch anchors on a declared
 schedule — and at what minimum batch — is an explicitly open question
 in the
-[merged profile](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
+[merged profile](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md#14-open-questions)
 (§14.5), with a written analysis required before
 batching may be *claimed* as a mitigation. Until then: **no timing
 mitigation exists at the anchor layer**.

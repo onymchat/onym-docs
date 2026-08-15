@@ -134,7 +134,10 @@ generation is automated and audited in widely used toolchains, and no
 hand-written verifier needs a bespoke audit. The cost is a real one —
 BN254 circuits, setup, and verifying keys separate from any future
 BLS12-381 Stellar sibling, and a cross-curve proof is invalid evidence
-in both directions, with fixtures required for both rejections.
+in both directions, with fixtures required for both rejections — one
+of which necessarily ships as a published vector with a
+counterpart-unimplemented marker until a Stellar sibling exists (see
+[Build order](#build-order)).
 
 Deployment identity is chain ID + contract address + runtime code
 hash, all three verified before first use; the verifier and admin
@@ -187,7 +190,7 @@ emails, and addresses in the input objects and greps every emitted log
 and written storage slot for them — zero hits to pass, with sealed
 recipient payloads asserted absent from calldata entirely. The full
 named list, precise enough to implement from, is
-[profile §13](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md).
+[profile §13](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md#13-conformance-fixtures).
 
 For what a block-explorer adversary can still see and infer — anchor
 counts, timing, the single gas-paying submitter — and what the UI must
@@ -200,11 +203,13 @@ disclose before anyone signs, see the
   Solidity, no EVM charity endpoints in the relayer, no fixtures. The
   [profile](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
   is merged — a specification, not code.
-- **One shared unbuilt dependency remains: the relayer's EVM
-  backend.** Both this binding and the
-  [notary EVM plan](notary-bnb.md) need it and neither has it; it is
-  built once by whichever build reaches it first and reused by the
-  other. Delivery is *not* sequenced after the
+- **Two shared unbuilt dependencies remain, both built once and
+  reused:** the relayer's **EVM backend** and the mobile Rust FFI's
+  **BN254 prover backend**. Both this binding and the
+  [notary EVM plan](notary-bnb.md) need each, neither build has
+  either, and whichever build reaches one first implements it for
+  both — the profile's §15 says "built once, not twice" in exactly
+  those terms. Delivery is *not* sequenced after the
   [Stellar charity build](charity-stellar.md), which has no code and
   no profile of its own yet.
 - The abstract contracts it answers to (`Charity.md`,
@@ -225,25 +230,26 @@ binding waits for the other:
 2. **Circuits** — the `membership-set-v1` BN254 constraint system,
    setup, and verifying keys, publishing their logical vectors as they
    land. The cross-curve cross-check binds whichever sibling profile
-   arrives *second*, in either direction — it is no longer phrased as
-   BNB checking against pre-existing BLS12-381 circuits.
-3. **Contracts** — `cha-anchor` plus generated verifiers, deployed
+   arrives *second*, in either direction.
+3. **Prover** — the BN254 PLONK backend in the mobile Rust FFI, built
+   once and shared with the [notary EVM plan](notary-bnb.md) exactly
+   like the relayer backend below; without it, no client can generate
+   the proof bytes the conformance chain starts from.
+4. **Contracts** — `cha-anchor` plus generated verifiers, deployed
    immutably.
-4. **Relayer EVM backend** — built once and shared with the
-   [notary EVM plan](notary-bnb.md): whichever build reaches it first
-   implements it, the other reuses it. Charity must not fork its own
-   EVM plumbing — and must not wait for the notary build if it gets
-   there first.
-5. **Declare, list, prove** — manifest entries, discovery listing, and
+5. **Relayer EVM backend** — built once and shared with the notary
+   EVM plan: whichever build reaches it first implements it, the
+   other reuses it. Charity must not fork its own EVM plumbing — and
+   must not wait for the notary build if charity reaches it first.
+6. **Declare, list, prove** — manifest entries, discovery listing, and
    the fixture suite green, in that order, before any real campaign
    binds this deployment.
 
 What independence costs, stated rather than hidden: until a Stellar
 sibling exists, the cross-curve rejection fixture ships one-directional
 (with the counterpart-unimplemented marker the profile specifies), and
-the proved-against-real-campaigns assurance the old ordering borrowed
-from a Stellar pilot must come from this binding's own testnet pilot
-instead.
+the proved-against-real-campaigns assurance must come from this
+binding's own testnet pilot.
 
 ## Next steps
 
