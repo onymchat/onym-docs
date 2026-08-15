@@ -13,9 +13,11 @@ Every seat is specified twice in
 contract (`X.md`) that is technology-free, and one or more implementation
 profiles (`X-<Technology>.md`) that map it onto a concrete stack.
 
-This book documents the seats that have **running reference code** today.
-It is not the specification — it is the map from a contract to the repo,
-the wire surface, and the command that starts it.
+This book documents the seats that have **running reference code**
+today, plus — clearly marked as plans — the seats whose build is
+designed but not started. It is not the specification — it is the map
+from a contract to the repo, the wire surface, and the command that
+starts it (or, for a plan, to the work that would).
 
 ## Implemented
 
@@ -32,8 +34,12 @@ the wire surface, and the command that starts it.
 ## Not implemented
 
 Contract only, no code in any Onym repository: **recovery trustee**,
-**backup**, **charity**, **audit**, **arbitration**, **lead generation**,
-**acquisition**, **sponsor**, **recruitment**. The **interface** seat has
+**backup**, **audit**, **arbitration**, **lead generation**,
+**acquisition**, **sponsor**, **recruitment**. The
+**[charity](seats/charity.md)** seat has draft contracts and
+per-chain implementation plans ([Stellar/Soroban](seats/charity-stellar.md),
+[BNB Chain](seats/charity-bnb.md)) documented in this book, but no
+code. The **interface** seat has
 client scaffolds ([`onym-ios`](https://github.com/onymchat/onym-ios),
 [`onym-android`](https://github.com/onymchat/onym-android)) but does not
 yet meet its contract. The **bank** seat is an open pull request against
