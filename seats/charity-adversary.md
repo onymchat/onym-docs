@@ -1,9 +1,12 @@
 # Charity on a public chain: the adversary's view
 
-*Threat-model page, draft 0.1 — 15 August 2026. Applies to the
-[BNB binding](charity-bnb.md) as specified; the
-[Stellar plan](charity-stellar.md) shares most rows with a smaller
-explorer ecosystem.*
+*Threat-model page, draft 0.1 — 15 August 2026. **Nothing analyzed
+here runs**: no contract, no circuits, no fixtures — see the
+[BNB binding's honest status](charity-bnb.md#honest-status). The
+observer below inspects the binding as specified; every "what they
+see" is what they *would* see on a deployment that does not exist.
+The [Stellar plan](charity-stellar.md) shares most rows with a
+smaller explorer ecosystem.*
 
 The charity trail puts commitments, nullifiers, and status changes on
 a public, heavily indexed chain on purpose — that is what makes the
@@ -80,9 +83,10 @@ credential secret.
 **Mitigation.** Scoped derivation: campaign and epoch are hashed into
 the nullifier with the credential secret, so cross-campaign and
 cross-epoch values are unlinkable **under the hash's pseudorandomness
-assumption and a correctly constrained circuit**. The fixtures prove
-the derivation is scoped; they cannot prove unlinkability itself —
-the profile states this limit rather than papering over it.
+assumption and a correctly constrained circuit**. The profile's
+specified fixtures — none of which exist yet — would prove only that
+the derivation is scoped; no fixture can prove unlinkability itself,
+and the profile states this limit rather than papering over it.
 
 **Residual risk.** A circuit soundness bug or hash break would
 degrade unlinkability; and *counts* per scope remain public (feeding
@@ -216,9 +220,15 @@ contract already requires.
 
 ## Reading this page honestly
 
-Three of the seven rows (1, 4, and part of 6) end in "no mitigation
-exists at this layer today," and one candidate mitigation (batching)
-is explicitly not yet earned. That is the intended reading: the
+Five of the seven rows offer no mitigation at their layer: rows 3, 5,
+and 6 say **none** outright — two of them deliberately (the
+claim→disbursement join *is* the audit trail; the operator's public
+history is the accountability), one as an accepted, declared property
+of the shared-submitter model — while row 1 is only partial and row
+4's single candidate mitigation (batching) is explicitly not yet
+earned. Only row 2's scoped derivation and row 7's
+detection-plus-finality are designed mitigations, and row 2's rests
+on a stated assumption. That is the intended reading: the
 binding's privacy claim is *zero intentional PII publication plus
 stated inference surface* — not anonymity. A deployment whose threat
 model requires the anchors themselves to be covert needs a different

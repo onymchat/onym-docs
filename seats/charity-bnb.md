@@ -62,8 +62,20 @@ The interface splits into two classes the contract keeps distinct:
   the claim atomically** — there is no separate verify step that could
   open a window between eligibility check and nullifier consumption.
 
-A fixture proves the split both ways: operator entrypoints refuse
-other senders, and claim anchoring succeeds from an arbitrary account.
+The profile requires a fixture that checks the split both ways:
+operator entrypoints refuse other senders, and claim anchoring
+succeeds from an arbitrary account. (No fixture exists yet — see
+[Honest status](#honest-status); "requires" is the strongest true
+verb on this page.)
+
+The public trail is the contract's typed events — `CampaignRegistered`
+and `CampaignRevisionAdvanced`, `CampaignStatusChanged`,
+`DonationReceiptAnchored`, `AidClaimAnchored`, and
+`DisbursementAnchored` — keyed by campaign and, for the claim
+lifecycle, by `claimDigest`, the public join between a claim and its
+disbursement. These are the names the
+[adversary page](charity-adversary.md) analyzes; they are defined by
+the drafted profile and would change only with it.
 
 ## Errors carry their own retry semantics
 
@@ -93,7 +105,7 @@ The design choices a skeptical reader should check, in brief:
   epochIndex), computed in-circuit and constrained to the same secret
   that satisfies the predicate. Campaign revision is deliberately *not*
   an input, so a policy update cannot mint a second claim in the same
-  window — there is a named fixture for exactly that. Cross-campaign
+  window — the profile names a fixture for exactly that. Cross-campaign
   and cross-epoch unlinkability rests on the hash assumption, and the
   profile says so rather than claiming a fixture proves it.
 - **Recipient commitment** = keccak(tag ‖ delivery-binding digest ‖
@@ -129,6 +141,23 @@ Deployment identity is chain ID + contract address + runtime code
 hash, all three verified before first use; the verifier and admin
 addresses are `immutable` values inside that hashed bytecode; proxies
 and `delegatecall` dispatch are prohibited under this profile ID.
+
+## The operator manifest
+
+The relayer's signed, byte-served operator manifest — live today on
+the Stellar notary side — would gain the charity profile entry, the
+`cha-anchor` deployments it administers, and `eip155` network entries
+binding the ed25519 operator identity to the secp256k1
+`submitterAccount` that pays gas and the `adminAccount` whose
+`msg.sender` the operator-attested entrypoints accept. The normative
+client check carries over from the
+[notary BNB profile](notary-bnb.md#the-operator-manifest-already-exists)
+unchanged: deployment verification MUST compare the manifest's
+`adminAccount` against the contract's `getOperatorAdmin()` (and the
+declared verifier against `getVerifier()`) — without that comparison,
+"declared powers match contract-enforced reality" is not verifiable.
+A deployment absent from the manifest does not exist for clients,
+whatever is on the chain.
 
 ## Receipts, finality, and reorgs
 

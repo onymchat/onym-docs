@@ -11,7 +11,7 @@
   * [BNB Chain plan](seats/notary-bnb.md)
 * [Charity (plan)](seats/charity.md)
   * [Stellar/Soroban plan](seats/charity-stellar.md)
-  * [BNB Chain](seats/charity-bnb.md)
+  * [BNB Chain (spec)](seats/charity-bnb.md)
   * [The adversary's view](seats/charity-adversary.md)
   * [Who holds which role](seats/charity-roles.md)
 * [Courier](seats/courier.md)

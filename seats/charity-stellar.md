@@ -98,9 +98,9 @@ What the chain actually verifies, in the contract's terms:
    anchoring — the duplicate rule sits at `claim-aid`, exactly where
    the abstract operations table places it, with no separate
    verify-then-consume window. (An earlier revision of this page said
-   "spent on first use" at presentation; the drafted
-   [BNB profile](charity-bnb.md) settles the claim-time reading and
-   the Stellar profile must match it.)
+   only "spent on first use", locating the consumption point nowhere;
+   the drafted [BNB profile](charity-bnb.md) settles the claim-time
+   reading and the Stellar profile must match it.)
 3. **Commitment integrity** — receipt and report commitments anchor
    the exact canonical bytes their signed off-chain objects hash to,
    so any application can verify a receipt against the chain without
