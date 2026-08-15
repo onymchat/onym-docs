@@ -1,122 +1,238 @@
-# Charity — BNB Chain (plan)
+# Charity — BNB Chain
 
-This page describes an implementation that **does not exist yet** —
-and, unlike the [notary's BNB plan](notary-bnb.md), its profile
-document is not merged either. Read this as a design intention that
-depends on the Stellar charity plan and the notary BNB profile both
-landing first.
+*Seat implementation page, draft 0.2 — 15 August 2026. Specification:
+drafted. Code: none — see [Honest status](#honest-status).*
 
-**Profile:** must be written — a `charity/UI-Charity-BNB.md` in
-`onym-system`, an EVM sibling of the
-[Stellar plan](charity-stellar.md)'s profile, not its replacement.
-Both bind the same abstract
+**Profile:** [`charity/UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/pull/35)
+— drafted and proposed as an open pull request against `onym-system`,
+not yet merged. It binds the abstract
 [`charity/Charity.md`](https://github.com/onymchat/onym-system/blob/main/charity/Charity.md)
-boundary.
+boundary's **notary and eligibility bindings** to BNB Smart Chain
+(mainnet 56, testnet 97; opBNB explicitly out of scope). An EVM
+sibling of the [Stellar plan](charity-stellar.md), not its
+replacement.
 **Code:** none.
 
-## What it will be
+This page summarizes what the profile specifies, so a reader can judge
+the design without the notary background. The full normative text —
+every signature, error, encoding rule, fixture, and open question — is
+the profile itself.
 
-The same charity **notary binding** — campaign revision commitments,
-receipt commitments, campaign- and epoch-scoped nullifier uniqueness,
-fund-flow anchors, policy-change records — as Solidity on **BNB Smart
-Chain** (mainnet 56, testnet 97), with the eligibility predicates
-re-proved as standard **PLONK over BN254 (KZG)** and checked by
-toolchain-generated Solidity verifiers. The reasoning is inherited
-wholesale from the [notary BNB profile](notary-bnb.md): BN254's
-pairing precompiles have years of production exposure, verifier
-generation is automated and audited in widely used toolchains, gas is
-cheaper, and no hand-written verifier needs an audit. The cost is
-likewise inherited: new constraint systems, a new setup, new verifying
-keys, and a second prover backend — a BLS12-381 eligibility proof is
-not valid evidence under this profile, and a BN254 proof is not valid
-under the Stellar one. Fixtures must prove both rejections.
+## Where the notary boundary ends
 
-The EVM hardening rules from the notary profile apply unchanged, and
-are restated in the charity profile rather than referenced silently:
+The contract (`cha-anchor`, one non-upgradeable instance per charity
+deployment) does exactly what `UI-Charity.md` §8.1 scopes the notary
+port to: campaign status and revision commitments, donation and
+disbursement **receipt commitments**, fund-flow commitments,
+**nullifier uniqueness** per campaign and epoch, and inspectable
+policy/status changes.
 
-- client-chosen 32-byte values (claim digests, nullifiers, recipient
-  commitments) generated **in-field** by rejection sampling and
-  rejected by the contract when out of range;
-- verifier and operator-admin addresses as Solidity `immutable`
-  values covered by the pinned runtime code hash;
-- upgradeable proxies prohibited outright;
-- distinct custom errors where retry guidance differs — a stale
-  campaign revision is refresh-and-rebuild, a public-inputs mismatch
-  is refuse-as-defect, and a spent nullifier is `NULLIFIER_USED`, a
-  terminal scoped refusal;
-- transaction hash mandatory in every write receipt from the first
-  release, with the operation ID as the stable reconciliation key.
+It holds no funds, mints nothing, and transfers nothing. The profile
+prohibits payable entrypoints, escrow, and disbursement logic under
+its profile ID. An anchored receipt digest proves *the operator
+anchored those exact bytes at that time* — never that money moved or
+that aid arrived. Custody, settlement, refunds, and disbursement stay
+with the financial provider under its own legal authority; a future
+on-chain settlement rail would be a separate `financialBindings`
+profile with its own finality, refund, and reversal mapping, which the
+profile deliberately does not define.
 
-## What the EVM changes for a charity trail
+## Two write authorities, contract-enforced
 
-The values on-chain stay exactly as opaque as on Stellar — that
-invariant does not move. What moves is the *neighborhood*:
+The interface splits into two classes the contract keeps distinct:
 
-- **Indexing.** BSC calldata, state, and events sit on public,
-  heavily-indexed explorers. Commitment counts, nullifier activity,
-  and timing become trivially chartable by anyone. For a transparency
-  trail that is mostly a feature — but the profile must declare it as
-  metadata exposure, exactly as `Charity.md` §9.3 requires for any
-  public rail.
-- **Correlation.** Zero PII on-chain does not mean zero inference
-  risk: public timing plus off-chain knowledge can correlate. The
-  scoped-nullifier and randomized recipient-commitment rules exist
-  precisely for this, and the profile must show its work — negative
-  fixtures for cross-campaign linkage, not just for PII fields.
-- **One submitter.** The relayer's single gas-paying account visibly
-  links every deployment it serves. That is the operator's declared
-  role, not a leak — but the deployment record must say so.
-- **Finality.** Receipt (`status == 1`) and the `finalized` checkpoint
-  are distinct client-visible states; a receipt in a later-orphaned
-  block is a security event, not a retry.
+- **Operator-attested writes** — campaign registration, revision
+  advance (by exactly one, no skips or rewinds), status changes
+  mirroring the abstract campaign machine
+  (`active/paused/closed/revoked`, no exit from closed or revoked —
+  registration itself is the machine's draft→active edge, drafts stay
+  off-chain), policy registration, and receipt/report anchors. Gated
+  on an operator-admin address baked immutably into the bytecode.
+  These are tamper-evident operator *statements*: the chain proves who
+  said it and when, not that it is true. The status gate scopes to
+  *new authorizations* only — receipt, disbursement, and report
+  anchors record already-authorized operations and stay writable after
+  a campaign pauses, closes, or is revoked, so ending a campaign can
+  never truncate its own audit trail.
+- **Proof-authorized writes** — `anchorAidClaim`, sender-agnostic.
+  Anyone may submit it; validity comes from a PLONK/BN254 eligibility
+  proof checked against the contract's own state, never from
+  `msg.sender`. One transaction verifies the proof, checks campaign
+  status, revision, and epoch, **consumes the nullifier, and anchors
+  the claim atomically** — there is no separate verify step that could
+  open a window between eligibility check and nullifier consumption.
+
+The profile requires a fixture that checks the split both ways:
+operator entrypoints refuse other senders, and claim anchoring
+succeeds from an arbitrary account. (No fixture exists yet — see
+[Honest status](#honest-status); "requires" is the strongest true
+verb on this page.)
+
+The public trail is the contract's typed events — `CampaignRegistered`
+and `CampaignRevisionAdvanced`, `CampaignStatusChanged`,
+`DonationReceiptAnchored`, `AidClaimAnchored`, and
+`DisbursementAnchored` — keyed by campaign and, for the claim
+lifecycle, by `claimDigest`, the public join between a claim and its
+disbursement. These are the names the
+[adversary page](charity-adversary.md) analyzes; they are defined by
+the drafted profile and would change only with it.
+
+## Errors carry their own retry semantics
+
+Every custom error is a distinct four-byte selector with a normative
+retry class, because "what should the client do now" differs:
+
+| Class | Errors | Client behavior |
+|---|---|---|
+| refresh-and-rebuild | `StaleCampaignRevision`, `EpochNotCurrent` | Re-resolve, re-consent to the new revision, rebuild the presentation (a new epoch also derives a new nullifier), resubmit. |
+| terminal scoped refusal | `NullifierUsed` | The entitlement was already claimed in this campaign and epoch. Show the scoped refusal; never a person identifier, never a retry. |
+| refuse-as-defect | `InvalidProof`, `ValueNotInField`, `UnknownPolicy`, `CampaignExists`, `OperatorOnly`, … | Generator or tooling bug; retrying cannot help. Proof diagnostics stay private. |
+| security event | `AnchorConflict`, post-inclusion reorg contradiction | Preserve evidence, raise the incident path, never silently resubmit or overwrite. |
+
+Because the contract **derives its own public-input vector** from call
+arguments and storage, the notary profile's "misordered statement"
+failure cannot arise here by construction — so there is deliberately
+no `PublicInputsMismatch` selector; each bindable field has its own
+named check, decided before the expensive pairing check runs. (An
+earlier revision of this page borrowed the notary's error names
+verbatim; the profile refines them.)
+
+## Nullifiers, commitments, and encodings
+
+The design choices a skeptical reader should check, in brief:
+
+- **Nullifier** = Poseidon(tag, credentialSecret, campaignId,
+  epochIndex), computed in-circuit and constrained to the same secret
+  that satisfies the predicate. Campaign revision is deliberately *not*
+  an input, so a policy update cannot mint a second claim in the same
+  window — the profile names a fixture for exactly that. Cross-campaign
+  and cross-epoch unlinkability rests on the hash assumption, and the
+  profile says so rather than claiming a fixture proves it.
+- **Recipient commitment** = keccak(tag ‖ delivery-binding digest ‖
+  fresh randomness), binding-only, opened privately to the delivery
+  provider. It hides the delivery coordinate and whether two claims
+  share one; it does not hide that a claim exists, its timing, or the
+  public claim→disbursement join, which is the audit trail by design.
+- **Encodings**: freely chosen identifiers are drawn in-field by
+  rejection sampling and rejected on-chain when out of range; digests
+  enter the circuit as two 128-bit limbs (injective, no grinding);
+  **modular reduction is forbidden everywhere**, with the aliasing
+  attack it would enable spelled out in the profile. Three ASCII
+  domain-separation tags are fixed, and a statement-tag constant in
+  the circuit makes a valid proof for any *other* statement family —
+  including the notary's group-transition circuits — unverifiable
+  here.
+
+## Why BN254, in charity terms
+
+The eligibility verifier is the only cryptographic novelty this
+binding adds, and it is the one component a charity deployment can
+least afford to get wrong: it decides whether an unnamed person's
+claim on real aid is honored. The profile therefore chooses standard
+PLONK over BN254 with **toolchain-generated** Solidity verifiers: the
+BN254 pairing precompiles have years of production exposure, verifier
+generation is automated and audited in widely used toolchains, and no
+hand-written verifier needs a bespoke audit. The cost is a real one —
+BN254 circuits, setup, and verifying keys separate from any future
+BLS12-381 Stellar sibling, and a cross-curve proof is invalid evidence
+in both directions, with fixtures required for both rejections.
+
+Deployment identity is chain ID + contract address + runtime code
+hash, all three verified before first use; the verifier and admin
+addresses are `immutable` values inside that hashed bytecode; proxies
+and `delegatecall` dispatch are prohibited under this profile ID.
 
 ## The operator manifest
 
-Same pattern, same file: the live manifest at
-`relayer.onym.app/manifest.json` would gain the charity BNB profile
-entry and `eip155` network entries binding the ed25519 operator
-identity to the submitter and admin accounts, with client
-verification comparing the manifest's declared admin against the
-contract's exposed one, as the
+The relayer's signed, byte-served operator manifest — live today on
+the Stellar notary side — would gain the charity profile entry, the
+`cha-anchor` deployments it administers, and `eip155` network entries
+binding the ed25519 operator identity to the secp256k1
+`submitterAccount` that pays gas and the `adminAccount` whose
+`msg.sender` the operator-attested entrypoints accept. The normative
+client check carries over from the
 [notary BNB profile](notary-bnb.md#the-operator-manifest-already-exists)
-requires. A deployment absent from the manifest does not exist, no
-matter what is on the chain.
+unchanged: deployment verification MUST compare the manifest's
+`adminAccount` against the contract's `getOperatorAdmin()` (and the
+declared verifier against `getVerifier()`) — without that comparison,
+"declared powers match contract-enforced reality" is not verifiable.
+A deployment absent from the manifest does not exist for clients,
+whatever is on the chain.
 
-## The plan, in phases
+## Receipts, finality, and reorgs
 
-Strictly after the [Stellar phases](charity-stellar.md#the-plan-in-phases)
-prove the obligations against real campaigns:
+Every write returns the EVM transaction hash from the first release —
+mandatory, but *provisional*, because a same-nonce fee-bump
+replacement changes the hash without changing the operation. The
+stable reconciliation key is the client's operation ID, with an
+outcome query returning current and superseded hashes. Receipt
+(`status == 1`) and the BSC `finalized` checkpoint are distinct
+client-visible states, and nothing is shown as final before
+reconciliation against the finalized tag. A receipt in a
+later-orphaned block is a `conflicting_state` **security event, not a
+retry** — for a claim write, the rebuild path terminates in either an
+idempotent identical anchor or `NullifierUsed`, both correct, and the
+event is still reported.
 
-1. **Profile** — `UI-Charity-BNB.md` in `onym-system`, leaning on the
-   merged notary BNB profile for every shared EVM rule.
-2. **Circuits** — the eligibility predicate families as BN254
-   constraint systems, cross-checked against the BLS12-381 circuits
-   with shared logical vectors.
-3. **Contracts** — the Solidity charity notary contracts plus
-   generated verifiers, deployed immutably, identified by chain ID +
-   address + runtime code hash.
-4. **Relayer EVM backend** — reusing whatever the notary BNB build
-   has produced by then; charity must not fork its own EVM plumbing.
-5. **Manifest + discovery + conformance** — declare, list, and prove,
-   in that order, before any real campaign binds this deployment.
+## What a conforming implementation must refuse
+
+The profile's fixture catalogue is weighted toward negatives on
+purpose — the binding's value is what it refuses. Among them: a second
+claim from the same credential in the same scope; the same claim after
+a campaign-revision advance (nullifier stability); a BLS12-381 proof
+under this profile and a BN254 proof under the Stellar one; a valid
+BN254 proof for a *different* statement family; out-of-field and
+reduction-aliased identifiers; stale revisions; conflicting anchors
+under one key; and a three-layer PII fixture that plants names, IBANs,
+emails, and addresses in the input objects and greps every emitted log
+and written storage slot for them — zero hits to pass, with sealed
+recipient payloads asserted absent from calldata entirely. The full
+named list, precise enough to implement from, is profile §13 (section
+numbers as drafted in
+[onym-system#35](https://github.com/onymchat/onym-system/pull/35);
+they can shift on merge).
+
+For what a block-explorer adversary can still see and infer — anchor
+counts, timing, the single gas-paying submitter — and what the UI must
+disclose before anyone signs, see the
+[adversary's view](charity-adversary.md).
 
 ## Honest status
 
-- **Nothing on this page runs.** No profile document, no BN254
-  charity circuits, no Solidity, no EVM charity endpoints, no
-  fixtures.
-- **Both dependencies are themselves plans.** The
+- **Nothing on this page runs.** No BN254 charity circuits, no
+  Solidity, no EVM charity endpoints in the relayer, no fixtures. The
+  profile document exists only as a
+  [proposed draft in an open pull request](https://github.com/onymchat/onym-system/pull/35),
+  unmerged.
+- **Both build dependencies are themselves plans.** The
   [Stellar charity build](charity-stellar.md) has no code, and the
-  [notary EVM backend](notary-bnb.md) this plan reuses is unbuilt —
-  this is a plan two plans deep, and it is listed so the dependency
-  order is on record, not because work is imminent.
+  [notary EVM backend](notary-bnb.md) this binding reuses is unbuilt —
+  this remains a plan two plans deep, documented so the dependency
+  order and the specification are on record, not because construction
+  is underway.
 - The abstract contracts it answers to (`Charity.md`,
-  `UI-Charity.md`) are merged drafts (0.1, August 2026).
+  `UI-Charity.md`) are merged drafts (0.1, August 2026); the profile
+  flags (as drafted) one wording question in `Charity.md` §6.8 (campaign-scoped
+  fields in public claim anchors) for upstream decision rather than
+  assuming an answer.
+
+## Build order
+
+Strictly after the [Stellar phases](charity-stellar.md#the-plan-in-phases)
+prove the obligations against real campaigns: merge the profile;
+circuits (cross-checked against any BLS12-381 sibling with shared
+logical vectors); contracts plus generated verifiers, deployed
+immutably; the relayer's EVM backend, shared with the notary build
+rather than forked; then manifest, discovery listing, and the fixture
+suite green — declare, list, and prove, in that order, before any real
+campaign binds this deployment.
 
 ## Next steps
 
 - [Charity](charity.md) — the abstract seat this binds.
-- [Charity — Stellar](charity-stellar.md) — the reference plan this
-  one re-proves.
+- [The adversary's view](charity-adversary.md) — what a public EVM
+  rail exposes, mitigation by mitigation.
+- [Who holds which role](charity-roles.md) — the abstract roles mapped
+  to concrete parties, including the unassigned ones.
 - [Notary — BNB Chain](notary-bnb.md) — the merged EVM profile whose
-  rules and relayer backend this plan inherits.
+  hardening rules the charity profile restates.

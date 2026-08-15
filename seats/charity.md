@@ -1,5 +1,7 @@
 # Charity
 
+*Seat page, draft 0.2 — 15 August 2026.*
+
 Charitable aid runs on trust, and trust is exactly what the people
 involved can't afford to spend. A donor wants to know their money
 reached a real, verified program — but "trust us" is all most programs
@@ -24,9 +26,11 @@ beneficiary PII** in any public record.
 — the technology-free boundary this page summarizes — and
 [`charity/UI-Charity.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity.md),
 the messenger-side application profile. Both are drafts.
-**Implementations:** [Stellar/Soroban](charity-stellar.md) ·
-[BNB Chain](charity-bnb.md) — both are **plans**; no charity code
-exists in any Onym repository yet.
+**Implementations:** [Stellar/Soroban](charity-stellar.md) — a
+**plan**, its profile unwritten ·
+[BNB Chain](charity-bnb.md) — a **drafted specification**
+([onym-system#35](https://github.com/onymchat/onym-system/pull/35),
+unmerged). No charity code exists in any Onym repository.
 
 This page stays deliberately free of any one blockchain, payment rail,
 or aid program — so does the contract, explicitly: it requires no
@@ -200,12 +204,22 @@ boundary leaves ledgers, proof systems, and rails to implementation
 profiles, and two are planned:
 
 - **[Stellar/Soroban](charity-stellar.md)** — the planned reference
-  binding: Soroban contracts as the campaign's notary and (later)
-  financial bindings, riding the notary seat's running relayer and
-  manifest infrastructure.
-- **[BNB Chain](charity-bnb.md)** — the planned EVM sibling: Solidity
-  contracts with toolchain-generated PLONK **BN254** verifiers,
-  following the [notary's BNB plan](notary-bnb.md).
+  binding: Soroban contracts as the campaign's notary binding, riding
+  the notary seat's running relayer and manifest infrastructure. Its
+  profile document is unwritten.
+- **[BNB Chain](charity-bnb.md)** — the EVM sibling: Solidity
+  contracts with toolchain-generated PLONK **BN254** verifiers. Its
+  profile is [drafted and proposed](https://github.com/onymchat/onym-system/pull/35)
+  — interface, errors, encodings, fixtures — with the code
+  explicitly nonexistent.
+
+Two companion pages keep the seat honest at the system level:
+[the adversary's view](charity-adversary.md) states what a public
+trail exposes and what the UI must disclose before anyone signs, and
+[the role-binding table](charity-roles.md) records which abstract
+roles are actually held by which parties — today, almost all
+**unassigned**, on the rule that a role is held when a signed record
+says so.
 
 ## Next steps
 
