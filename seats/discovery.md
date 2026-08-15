@@ -19,8 +19,9 @@ Two realities coexist on this page, and both are real. The
 **operational path** — what every shipping client reads today — is a
 handful of unsigned GitHub release assets, documented first below. The
 **signed-catalog path** is the merged implementation profile with a
-reference implementation and client packages in review; it is what the
-release assets migrate onto, and it is documented after.
+reference implementation, merged client packages, and a live provider
+at `discovery.onym.app`; it is what the release assets migrate onto,
+and it is documented after.
 
 ## Today's operational path: release assets
 
@@ -137,31 +138,65 @@ What exists, honestly:
   the profile's §10 vectors are published as fixtures and the rest
   (the chain-behavior cases) are covered by in-repo tests, with the
   privacy trace discharged as a client obligation — plus deployment
-  templates and a publish runbook for a future provider. A manual deploy workflow for
-  `discovery.onym.app` is in review
-  ([#4](https://github.com/onymchat/onym-discovery/pull/4)).
-- **Client packages are written and in review**: iOS
+  templates and a publish runbook.
+- **A provider is live**: `discovery.onym.app` serves a signed
+  provider manifest and the `onym-services` catalog, with its
+  inclusion policy and privacy profile pinned by digest. Its operator
+  fingerprint is published below.
+- **Client packages are merged**: iOS
   ([#244](https://github.com/onymchat/onym-ios/pull/244)–[#247](https://github.com/onymchat/onym-ios/pull/247))
   and Android
   ([#204](https://github.com/onymchat/onym-android/pull/204)–[#208](https://github.com/onymchat/onym-android/pull/208))
   — fetching, TOFU key pinning, chain verification, source management,
   and the consent UI, wired behind the legacy fetchers as a fallback.
 
+## Operator fingerprints
+
+When you add a discovery provider, your client shows you an operator
+key fingerprint and asks you to confirm it before pinning
+(trust-on-first-use). That confirmation is only as good as the value
+you compare it against — so here are the reference operators'
+fingerprints, published out of band from the services themselves.
+**Compare the fingerprint on your app's TOFU screen against the value
+below.** If they match, confirm and the key is pinned; if they don't,
+stop — you are not talking to the operator this page describes.
+
+| Service | Fingerprint | Operator key |
+|---|---|---|
+| `discovery.onym.app` (discovery) | `4d:a9:ec:c9:e8:6f:6e:97` | `onym:key:42b0da001104dd03052c7feddab9520c920c9e40d11b245c46c27cf6be853f24` |
+| `relayer.onym.app` (notary) | `28:77:a5:5c:c4:ae:20:ec` | `onym:key:8c836293161a3ee2e4c2e338851d88289a2db494efc6342d9fb7ac0c516936ad` (manifest `validUntil` 2027-08-14) |
+
+The live `onym-services` catalog also lists these operators for the
+other seats. Their manifests are indexed by the catalog, so the pinned
+discovery key already protects them — but the keys are repeated here
+for out-of-band comparison:
+
+| Service | Fingerprint | Operator key |
+|---|---|---|
+| `onym-authority` (moderation) | `fd:92:53:ed:1f:1e:35:7d` | `onym:key:bdec68a8440f36591dd822748f86fee3582794b3d20445b06953db6f266f3dca` |
+| `onym-courier` (transport.message) | `6b:14:cd:ea:7e:95:be:60` | `onym:key:92500a19c43193c8945aa91b94878b0c986f2c4da500de4c2caea29103aaa84f` |
+| `onym-blossom` (blob.storage) | `4a:e9:35:23:ef:49:b6:00` | `onym:key:e446f2b18e9f75e13397ebdff0f2e40610c9e745aa11308b04c8b607f7dea094` |
+
+A fingerprint is the first 8 bytes, colon-separated hex, of the
+SHA-256 of the key's 32 raw public-key bytes. Every value above was
+verified on **2026-08-15** against the manifests actually served at
+`https://discovery.onym.app/manifest.json`,
+`https://relayer.onym.app/manifest.json`, and the operators listed in
+`https://discovery.onym.app/catalogs/onym-services.json`, with the
+fingerprints recomputed from the served keys. If this page and your
+TOFU screen ever disagree, treat the disagreement itself as the
+signal and ask before pinning.
+
 ## Honest limits
 
 The profile's own gaps section is candid, and this page will not
 outrun it:
 
-- **No provider is deployed.** `discovery.onym.app` serves nothing yet:
-  no operator keys, no signed catalog. The deploy workflow that would
-  change that is in review
-  ([#4](https://github.com/onymchat/onym-discovery/pull/4)); until it
-  lands and runs, the release assets above remain the only operational
-  path, and migrating them onto signed catalogs is explicitly listed
-  as remaining work.
-- **The policy documents are unwritten.** Every catalog must pin an
-  inclusion/ranking policy and a privacy profile by digest; those
-  documents do not exist yet.
+- **The release assets have not migrated.** `discovery.onym.app` is
+  live and serves a signed catalog, but the shipping clients still
+  read the release assets above as their operational path; migrating
+  them onto the signed catalogs is explicitly listed as remaining
+  work.
 - **Some checks live only in the reference CLI.** Duplicate-key
   rejection, the detached-`.sig` verify path, and cross-catalog
   equivocation / source-conflict detection are implemented and
