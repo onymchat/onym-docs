@@ -6,8 +6,9 @@ not written. Code: none — see [Honest status](#honest-status).*
 **Profile:** must be written — a `charity/UI-Charity-Cardano.md` in
 `onym-system`, binding the
 [`charity/Charity.md`](https://github.com/onymchat/onym-system/blob/main/charity/Charity.md)
-boundary's **notary and eligibility bindings** to Cardano (Plutus V3,
-mainnet and preprod). A third sibling beside the
+boundary's **notary and eligibility bindings** to Cardano at protocol
+version 11 or later (mainnet and preprod; preview out of scope). A
+third sibling beside the
 [Stellar plan](charity-stellar.md) and the
 [merged BNB specification](charity-bnb.md), gating and gated by
 neither.
@@ -30,12 +31,12 @@ commitments, **nullifier uniqueness** per campaign and epoch, and
 inspectable policy and status changes — is what the validators do,
 and nothing else.
 
-In Cardano terms the refusals are sharper than on the EVM, because
-the ledger makes value movement so easy to express. Under this
-profile ID the validators hold no funds beyond the min-UTXO ADA the
-ledger forces every output to carry, mint no assets beyond the
-scoped nullifier and beacon tokens described below, pay no addresses,
-and execute no transfer of any native asset. An anchored digest
+The refusals need stating more sharply than on the EVM, because the
+ledger makes value movement so easy to express. Under this profile ID
+the validators hold no funds beyond the min-UTXO ADA the ledger
+forces every output to carry, mint no assets beyond the scoped
+nullifier and beacon tokens described below, pay no addresses, and
+execute no transfer of any native asset. An anchored digest
 proves *the operator anchored those exact bytes at that time* —
 never that money moved or that aid arrived. A stablecoin or ADA
 settlement rail would be a separate `financialBindings` profile with
@@ -86,28 +87,43 @@ to "one token per arbitrary nullifier value", because the nullifier
 is not known when the policy is parameterized.
 
 So a nullifier token can *represent* a spent nullifier, but something
-on-chain must still prove the nullifier was not spent before. Two
-shapes, with a third that only exists as a mitigation:
+on-chain must still prove the nullifier was not spent before.
 
-- **Single registry UTXO per campaign and epoch**, carrying a set or
-  trie root in its datum. Correct and simple; each claim spends the
-  registry and produces its successor. It also **serialises every
-  claim in the scope to one transaction per block**. For a real
+One precondition first, without which the comparison is meaningless.
+The claim validator reads campaign status, revision, and the
+registered policy as **reference inputs**
+([CIP-31](https://cips.cardano.org/cip/CIP-0031)) — never by spending
+the campaign-state UTXO. Under this profile ID campaign state is
+referenced and not consumed by a claim, and only the nullifier
+structure is spent. Otherwise every claim in a campaign would contend
+on one UTXO regardless of nullifier shape, and the comparison below
+would be moot. Two shapes, then, with a third that is only a
+mitigation:
+
+- **Single registry UTXO per campaign and epoch**, carrying the root
+  of a sparse Merkle trie — the Merkle Patricia Forestry
+  construction the ecosystem already reaches for — in its datum, with
+  non-membership proven by a witness in the redeemer. On-chain
+  storage is O(1) and the ADA it locks is *constant*, whatever the
+  claim count. Its one problem is contention: each claim spends the
+  registry and produces its successor, which **serialises every claim
+  in the scope to one transaction per block**. For a real
   campaign that is not a performance note, it is a liveness failure:
   concurrent claimants collide, and the only way to sustain
   throughput is a single party chaining transactions off-chain —
   which makes the relayer a sequencer and a censorship point the
   design otherwise avoids.
-- **Nullifier set as UTXOs** — a sorted on-chain structure (linked
-  list or trie) where each node is its own UTXO. Insertion proves
-  non-membership by spending the node whose bounds cover the new
-  nullifier and producing the covering nodes that replace it.
-  Concurrency then scales with the size of the set rather than
-  collapsing to one, but two claims falling in the *same gap* still
-  contend, so the client needs a rebuild-and-resubmit loop whose
-  frequency depends on set density. It also locks min-UTXO ADA in
-  every node, permanently, because a nullifier set may never shrink:
-  the ADA floor grows linearly with the number of claims ever made
+- **Nullifier set as UTXOs** — a sorted on-chain linked list where
+  each node is its own UTXO. Insertion proves non-membership by
+  spending the node whose bounds cover the new nullifier and
+  producing the nodes that replace it. This trades the registry's
+  constant ADA for concurrency: contention scales with the size of
+  the set rather than collapsing to one, but two claims falling in
+  the *same gap* still contend, so the client needs a
+  rebuild-and-resubmit loop whose frequency depends on set density.
+  The ADA cost is the mirror image of the trade — every node locks
+  min-UTXO permanently, because a nullifier set may never shrink, so
+  the floor grows linearly with the number of claims ever made
   against the campaign.
 - **Shard the registry** by a prefix of the nullifier, dividing
   contention by the shard count at the cost of that many min-UTXO
@@ -154,13 +170,26 @@ renaming exercise.
 
 ## BLS12-381: the third binding adds no fourth curve
 
-Plutus V3 exposes BLS12-381 as builtins — group operations,
-compression, hash-to-curve, and pairing via `millerLoop` /
-`mulMlResult` / `finalVerify`
-([CIP-381](https://cips.cardano.org/cip/CIP-0381)) — extended with
-multi-scalar multiplication
-([CIP-133](https://cips.cardano.org/cip/CIP-0133)) and modular
-exponentiation ([CIP-109](https://cips.cardano.org/cip/CIP-0109)).
+Cardano has exposed BLS12-381 as builtins since the Chang hard fork —
+group operations, compression, hash-to-curve, and pairing via
+`millerLoop` / `mulMlResult` / `finalVerify`
+([CIP-381](https://cips.cardano.org/cip/CIP-0381)). The primitives
+that make a verifier *practical* are much newer: multi-scalar
+multiplication ([CIP-133](https://cips.cardano.org/cip/CIP-0133)) and
+modular exponentiation
+([CIP-109](https://cips.cardano.org/cip/CIP-0109)) arrived with the
+**van Rossem hard fork, protocol version 11** — Preview on 8 May
+2026, mainnet on 18 July 2026, one month before this page. That has
+two consequences the profile must carry. The deployment precondition
+is **network at PV11 or later**, not "Plutus V3", and it belongs
+beside network magic and script hash in the identity section and in
+the manifest's declared entries; PV11 also made every builtin
+available across Plutus V1, V2, and V3, so the ledger language
+version no longer identifies a capability set at all. And nothing
+below rests on settled infrastructure: these builtins and their cost
+model are months old, which is an argument for prototyping, not
+against it.
+
 The curve is the one the
 [Stellar notary already runs in production](notary-stellar.md), so
 this binding proves eligibility over **the same curve as Stellar**
@@ -175,8 +204,18 @@ instead of waiting on the BN254 backend the
 [BNB plan](charity-bnb.md) and the
 [notary EVM plan](notary-bnb.md) both still need. What is *not*
 shared is the verifier. Soroban verifies through host functions
-against a Rust contract; Cardano needs the verifier written in
-Plutus — Aiken or PlutusTx — on top of the builtins above.
+against a Rust contract; Cardano needs the verifier written on top of
+the builtins above.
+
+Which language writes it is not a detail, because it is the largest
+single determinant of the audit surface this binding is paying for.
+The working answer is **Aiken**: there is existing BLS12-381 verifier
+prior art to review against, and the compiler between source and
+script hash is small enough that a third party recomputing the hash
+(below) is checking something tractable. PlutusTx carries GHC plugin
+complexity into exactly that path. The profile decides; leaving it
+implicit would be the one place this design silently expands what an
+auditor must trust.
 
 That is the trade the page should not soften. BNB chose BN254
 specifically to get **toolchain-generated** Solidity verifiers and
@@ -189,16 +228,42 @@ deciding whether an unnamed person's claim on real aid is honored.
 **That is the load-bearing cost of this binding**, and no fixture
 retires it — only an audit does.
 
-Whether the verifier fits is separately open. Per-transaction
-execution-unit and transaction-size ceilings are governance-set
-protocol parameters, and a PLONK verifier's dominant costs are the
-multi-scalar multiplication over the commitment set and the final
-pairing; CIP-133 exists because naive scalar-multiplication loops in
-Plutus exhaust the budget. Whether the `membership-set-v1` verifier
-fits one transaction's budget is settled by a prototype and nothing
-else. If it does not, the alternatives all cost something the profile
-must weigh openly: shrink the circuit, split verification across
-chained transactions against a partially-verified state UTXO —
+Sharing a curve is necessary but not sufficient for sharing a prover,
+and the condition that actually decides it is the **Fiat–Shamir
+transcript**, because that is the one thing a verifier must recompute
+byte-for-byte in-script. A transcript over a circuit-native hash
+would be fatal here: Plutus offers SHA-2, SHA-3, blake2b, keccak-256,
+and RIPEMD-160 as builtins, and **no Poseidon**, so a Poseidon
+transcript would have to be written out in Plutus field arithmetic —
+an order-of-magnitude problem no MSM optimisation touches.
+
+It is not Poseidon. The notary's transcript
+(`plonk/prover/src/circuit/plonk/transcript.rs` in
+[`onym-contracts`](https://github.com/onymchat/onym-contracts), a
+port of jf-plonk's `SolidityTranscript`) is **keccak-256** over a
+32-byte state, chosen so the Solidity and Soroban verifiers agree on
+bytes. Plutus has `keccak_256` as a builtin
+([CIP-101](https://cips.cardano.org/cip/CIP-0101)). Poseidon appears
+in this stack *inside* the circuit — nullifier derivation, membership
+— where the verifier never recomputes it. The shared-prover claim
+therefore survives inspection rather than resting on an assumption,
+and the reason it survives is a decision made for the EVM's benefit
+that happens to pay again here.
+
+What remains for the prototype is budget, not compatibility.
+Per-transaction execution-unit and size ceilings are governance-set
+protocol parameters; the verifier's costs are the multi-scalar
+multiplication over the commitment set, one `millerLoop` /
+`finalVerify` pair, the keccak transcript, and scalar-field
+arithmetic for the linearisation and evaluation aggregation. Only the
+last is unassisted by a builtin. Before PV11 this was hopeless — a
+naive Plutus MSM of more than 129 points could not fit in a
+transaction at all, which is why CIP-133 exists — and after it, no
+order-of-magnitude blocker survives inspection. That is not the same
+as fitting, and a cost model this new is settled by measurement and
+nothing else. If it does not fit, the alternatives all cost something
+the profile must weigh openly: shrink the circuit, split verification
+across chained transactions against a partially-verified state UTXO —
 **which forfeits the single-transaction atomicity established above**
 — or change proof systems and lose the shared prover that motivated
 the curve choice in the first place.
@@ -214,15 +279,14 @@ a way it is not between BNB and Stellar. The profile must say so.
 
 ## Errors: the taxonomy moves off-chain
 
-A Plutus validator fails. It does not return a four-byte selector,
-and there is no Cardano equivalent of the BNB profile's
-`StaleCampaignRevision` / `NullifierUsed` / `InvalidProof` surface
-observable from the chain. Worse, the failure is not free: a
-transaction that fails phase-2 script validation **forfeits the
-submitter's collateral**, and the submitter is the operator's relayer
-account. Off-chain classification is therefore not a UX nicety on
-this chain; it is what keeps a client-side bug from burning operator
-ADA.
+A Plutus validator fails without returning a selector, so there is no
+Cardano equivalent of the BNB profile's `StaleCampaignRevision` /
+`NullifierUsed` / `InvalidProof` surface observable from the chain.
+The failure is also not free: a transaction failing phase-2 script
+validation **forfeits the submitter's collateral**, and the submitter
+is the operator's relayer account. Off-chain classification is
+therefore not a UX nicety here; it is what keeps a client-side bug
+from burning operator ADA.
 
 The client behavior half of the BNB table survives; the place it is
 decided does not.
@@ -235,18 +299,18 @@ decided does not.
 | security event | An anchor contradicting a previously observed anchor; an anchor that disappears in a rollback | On-chain observation after inclusion | Preserve evidence, raise the incident path, never silently resubmit or overwrite. |
 
 [CIP-57](https://cips.cardano.org/cip/CIP-0057) blueprints are the
-candidate mechanism for making this mapping mechanical: the validator
-publishes its named failure conditions and its datum/redeemer
-schemas, and the off-chain evaluator maps a trace to a class from the
+candidate mechanism for making the mapping mechanical: the validator
+publishes its named failure conditions and its datum and redeemer
+schemas, and the evaluator maps a trace to a class from the
 declaration rather than from a string match.
 
-The honest cost, which the profile must not bury: on BNB a client can
-derive the retry class **from the chain itself**, because the
+The honest cost, which the profile must not bury: on BNB a client
+derives the retry class **from the chain itself**, because the
 selector is in the receipt. Here the class is the relayer's claim
-about a transaction it chose not to submit. A client can verify the
-resulting *state* independently, but not the classification. That is
-strictly less verifiable than the EVM sibling, and it is a
-consequence of the ledger model, not of a design shortcut.
+about a transaction it chose not to submit — the resulting *state* is
+independently verifiable, the classification is not. That is strictly
+less verifiable than the EVM sibling, and it follows from the ledger
+model rather than from a design shortcut.
 
 ## Every surface that can carry bytes
 
@@ -297,58 +361,74 @@ uniformly in Cardano's favour:
 
 **Identity.** The Cardano analogue of chain ID + address + runtime
 code hash is **network magic + script hash + the parameter vector the
-script hash commits to**, all verified before first use. It is
-stronger in one respect: parameters are hashed into the script hash,
-so a client that recomputes the hash learns what the deployment can
-do without trusting any getter. Reference scripts
-([CIP-33](https://cips.cardano.org/cip/CIP-0033)) do not change this
-— they are a size optimisation, and a client must check that the
-referenced script hashes to the declared value rather than trusting
-the pointer. Proxy and upgrade patterns are prohibited under this
-profile ID; changing a parameter produces a different script hash,
-which is a different deployment that must be separately declared.
+script hash commits to**, plus the **minimum protocol version** the
+validators require, all verified before first use. Concretely:
+mainnet (magic 764824073) and preprod (magic 1), at protocol version
+11 or later; preview (magic 2) is explicitly out of scope, as opBNB
+is for the [EVM sibling](charity-bnb.md). Identity here is stronger
+than a getter in one respect — parameters are hashed into the script
+hash, so a client that recomputes the hash learns what the deployment
+can do without trusting anything the deployment says about itself.
+Reference scripts ([CIP-33](https://cips.cardano.org/cip/CIP-0033))
+do not change identity; a client checks that the referenced script
+hashes to the declared value rather than trusting the pointer. Proxy
+and upgrade patterns are prohibited under this profile ID; changing a
+parameter produces a different script hash, which is a different
+deployment that must be separately declared.
 
-**Settlement.** Ouroboros Praos settles probabilistically. There is
-no `finalized` tag to reconcile against as there is on BSC:
+**Settlement.** Ouroboros Praos settles probabilistically, and there
+is no `finalized` tag to reconcile against as there is on BSC:
 immutability arrives at the security parameter k = 2160 blocks —
 roughly twelve hours at mainnet's active slot coefficient — and
-everything before that is a depth-based confidence judgment. The
-client-visible distinction the siblings require survives, with the
-threshold becoming a declared policy rather than a chain guarantee:
-`included` (in a block) and `settled` (at or beyond the profile's
-declared depth) stay distinct states, and nothing is shown as final
-before the second. Naming that cost plainly: BSC's finalized tag is
-the chain's statement; a depth threshold is the profile's. Whether
+everything before is a depth-based confidence judgment. The
+client-visible distinction survives with the threshold becoming a
+declared policy rather than a chain guarantee: `included` and
+`settled` (at or beyond the profile's declared depth) stay distinct,
+and nothing is shown as final before the second. The cost, plainly:
+BSC's finalized tag is the chain's statement; a depth threshold is
+the profile's. That is not a temporary state of affairs —
 [CIP-140 (Ouroboros Peras)](https://cips.cardano.org/cip/CIP-0140)
-should supply a settlement signal once available is an open question.
+sits in the second phase of the Dijkstra roadmap, targeting Q2 2027
+behind Linear Leios in Q4 2026, and those dates are published as
+estimates. A declared depth threshold is therefore the answer for
+this binding's entire plausible build window, not a placeholder.
 
 A rolled-back anchor is a `conflicting_state` **security event, not a
-retry**, unchanged from both siblings. Cardano adds one wrinkle worth
-stating: a rollback also un-spends the nullifier, so the rebuild path
-terminates in either an idempotent identical anchor or the terminal
-scoped refusal, both correct — and the event is still reported.
+retry**, unchanged from both siblings. Cardano adds one wrinkle: a
+rollback also un-spends the nullifier, so the rebuild path terminates
+in either an idempotent identical anchor or the terminal scoped
+refusal, both correct — and the event is still reported.
 
-**Receipts.** The BNB fee-bump problem does not arise, because
-Cardano has no same-nonce replacement; a transaction lands or expires
-at its validity interval. A different instability replaces it: an
-expired transaction is rebuilt against different inputs and gets a
-different hash for the same operation. The stable reconciliation key
-remains the client's operation ID, for a new reason.
+**Receipts.** The BNB fee-bump problem does not arise in the same
+form: there is no nonce and no fee-bump replacement, though a pending
+transaction can still be displaced by another spending the same
+input, and one that is displaced or expires at its validity interval
+is rebuilt against different inputs and gets a different hash for the
+same operation. The stable reconciliation key remains the client's
+operation ID, for a different reason than on the EVM.
 
-**Collateral and min-UTXO.** Plutus transactions require collateral
-inputs. The relayer's operator account provides them and **no
-end-user Cardano key ever exists**, mirroring the
-[Stellar relayer model](notary-stellar.md) exactly. Two operational
-consequences the Stellar and EVM backends do not have: concurrent
-in-flight transactions need *distinct* collateral UTXOs, so the
-relayer must manage a UTXO pool rather than a nonce or sequence
-number; and every registry node, beacon UTXO, and anchor output locks
-min-UTXO ADA that is never recovered, so the deployment's ADA floor
-grows with the number of claims ever made. Who funds that floor, and
-whether anchors are stored as UTXOs at all rather than as consumable
-datum commitments, is an open profile question with a direct privacy
-consequence — a consolidation strategy is also a linkability
-strategy.
+**Collateral and running cost.** Plutus transactions require
+collateral inputs. The relayer's operator account provides them and
+**no end-user Cardano key ever exists**, mirroring the
+[Stellar relayer model](notary-stellar.md) exactly. Three operational
+consequences the Stellar and EVM backends do not have:
+
+- Concurrent in-flight transactions need *distinct* collateral
+  UTXOs, so the relayer manages a UTXO pool rather than a nonce or
+  sequence number.
+- Reference scripts are not free per use. Since Conway a tiered
+  per-byte fee applies (15 lovelace per byte on mainnet, with a
+  multiplier per size tier), so a large hand-written pairing verifier
+  is a **recurring per-transaction cost**, not a one-time deployment
+  cost. This compounds with the audit argument above: a bigger
+  verifier is both more to audit and more expensive to use, every
+  time anyone claims.
+- Locked ADA depends on choices not yet made. The registry-trie shape
+  locks a constant amount; the UTXO-per-node shape locks min-UTXO per
+  nullifier permanently, and anchors add more only if they persist as
+  UTXOs rather than as consumable datum commitments. Who funds the
+  floor is an open question with a privacy consequence attached — a
+  consolidation strategy is also a linkability strategy.
 
 ## The operator manifest
 
@@ -371,10 +451,16 @@ blueprint and the manifest's declared parameters, and checks it
 against the hash the on-chain address commits to. Better in one
 direction, since no runtime getter can lie about a value the hash
 already fixes. Worse in another: the check is only as good as build
-reproducibility, and it presumes a client willing to compile. Whether
-clients can be expected to do this, or whether the profile must pin a
-published reproducible build artifact and reduce the check to a hash
-comparison, is an open question this page cannot settle.
+reproducibility, and it presumes a client willing to compile.
+
+A third option sits between them and is probably the realistic one
+for a mobile client: the deployment publishes its configuration in an
+**inline datum at a known script address**, readable with an ordinary
+chain query and no compiler. That recovers the ergonomics of a getter
+without the ability to lie about the parameters, since the datum can
+be checked against the script hash by anyone who *does* compile —
+once, publicly, rather than per client. Which of the three the
+profile requires is open.
 
 ## Double satisfaction
 
@@ -400,18 +486,19 @@ deliberate double-satisfaction attempt either way.
 ## Honest status
 
 - **Nothing on this page runs, and nothing specifies it.** There is
-  no `UI-Charity-Cardano.md` — verified in this session, `onym-system`
-  holds exactly `Charity.md`, `UI-Charity.md`, and
-  `UI-Charity-BNB.md`. There are no charity validators, no charity
-  circuits on any curve, and no Cardano endpoints in the relayer —
-  verified against
-  [`onym-contracts`](https://github.com/onymchat/onym-contracts) and
-  the relayer repository, neither of which contains the string
-  `charity` in any source file.
-- **One dependency is already built and reused, not rebuilt:** the
-  BLS12-381 TurboPLONK prover backend in `onym-contracts` that the
-  Stellar notary runs today. This binding needs new *circuits* on
-  that curve, not a new prover.
+  no `UI-Charity-Cardano.md`: `onym-system` holds exactly
+  `Charity.md`, `UI-Charity.md`, and `UI-Charity-BNB.md`. There are
+  no charity validators, no charity circuits on any curve, and no
+  Cardano endpoints in the relayer — neither
+  [`onym-contracts`](https://github.com/onymchat/onym-contracts) nor
+  the relayer repository contains the string `charity` in any source
+  file. *(Repository state verified 17 August 2026.)*
+- **One dependency is already built and expected to be reused, not
+  rebuilt:** the BLS12-381 TurboPLONK prover backend in
+  `onym-contracts` that the Stellar notary runs today. This binding
+  needs new *circuits* on that curve, not a new prover — subject to
+  the transcript check in build step 4, which is the one result that
+  could overturn it.
 - **One dependency is shared and unbuilt:** the BLS12-381 charity
   eligibility circuits, shared with the
   [Stellar charity plan](charity-stellar.md) in the "built once, not
@@ -445,15 +532,22 @@ claim:
    BLS12-381, setup, and verifying keys. Shared with the Stellar
    charity binding: whichever build reaches them first implements
    them for both.
-3. **Prover** — nothing to build. The BLS12-381 backend exists and
-   ships in the notary's mobile FFI today; this is the one place
-   Cardano starts ahead of the EVM sibling, which still needs a BN254
-   backend built.
+3. **Prover** — expected to be nothing to build. The BLS12-381
+   backend exists and ships in the notary's mobile FFI today, and its
+   keccak-256 transcript is reproducible from Plutus builtins; this
+   is the one place Cardano starts ahead of the EVM sibling, which
+   still needs a BN254 backend built. "Expected" until step 4
+   confirms it at the byte level.
 4. **Verifier prototype, before the validators** — out of order on
-   purpose. Whether a BLS12-381 TurboPLONK verifier fits a Plutus
-   execution budget is the question that decides whether the rest of
-   the chain is worth building, and it can be answered by a
-   throwaway script against a published verifying key.
+   purpose, because it is the step that can invalidate the three
+   above. Its questions in order: first, does a Plutus transcript
+   reproduce the prover's keccak-256 challenges byte-for-byte against
+   an existing proof; second, does the MSM, pairing, and
+   scalar-field arithmetic fit one transaction's PV11 budget. A
+   throwaway script against a published verifying key answers both.
+   A failure on the first question is the expensive one — it changes
+   the prover and weakens the shared-backend argument that motivates
+   the curve choice.
 5. **Validators** — the charity validators plus the audited verifier,
    deployed at a parameterized script hash with no upgrade path.
 6. **Relayer Cardano backend** — transaction building, UTXO and
@@ -473,23 +567,31 @@ answer:
 1. **Nullifier-set shape** — single registry UTXO, UTXO-per-node
    sorted structure, or sharded registry. Decided by expected claim
    concurrency per epoch, which is unmeasured.
-2. **Verifier feasibility** — whether the pairing check and MSM fit
-   one transaction's execution-unit budget, and which fallback
-   applies if not. Settled by prototype (build step 4), not by
-   argument.
-3. **Min-UTXO funding and anchor storage** — who funds a floor that
-   grows with claim count, and whether anchors persist as UTXOs at
-   all; consolidation strategy is also linkability strategy.
-4. **Double-satisfaction mitigation** — positional output binding
+2. **Verifier feasibility** — whether the MSM, pairing, and
+   scalar-field arithmetic fit one transaction's PV11 execution-unit
+   budget, and which fallback applies if not. Settled by prototype
+   (build step 4), not by argument.
+3. **Prover divergence** — the residual risk behind the shared-prover
+   claim. The transcript hash is keccak-256 and Plutus has the
+   builtin, so the claim survives inspection, but only a byte-level
+   check against a real proof confirms it. If any verifier-side hash
+   turns out to be unreproducible in Plutus, the prover changes, the
+   backend stops being shared, and the strategic argument for the
+   curve choice weakens accordingly.
+4. **Min-UTXO funding and anchor storage** — who funds the floor the
+   chosen nullifier shape implies, and whether anchors persist as
+   UTXOs at all; consolidation strategy is also linkability strategy.
+5. **Double-satisfaction mitigation** — positional output binding
    versus a one-script-input-per-transaction rule, and what the
    latter costs if anchor batching later becomes a required privacy
    mitigation.
-5. **Settlement depth** — the declared threshold, and whether
-   Ouroboros Peras supplies a chain-level signal once available.
-6. **Manifest verification** — recompiled script hash versus a pinned
-   reproducible build artifact, and which is realistic for a mobile
-   client.
-7. **Statement separation from Stellar** — with a shared curve,
+6. **Settlement depth** — the declared threshold. Peras is a Q2 2027
+   roadmap item, so this is the answer for the whole build window
+   rather than an interim one.
+7. **Manifest verification** — published inline-datum configuration,
+   client-recompiled script hash, or a pinned reproducible build
+   artifact, and which is realistic for a mobile client.
+8. **Statement separation from Stellar** — with a shared curve,
    separation rests entirely on the statement tag and profile ID; the
    fixture set must be designed for that, not inherited from the
    cross-curve pair.
