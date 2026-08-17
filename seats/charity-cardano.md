@@ -22,6 +22,16 @@ three mechanisms the [BNB binding](charity-bnb.md) leans on hardest.
 Every section below either states the Cardano-native replacement and
 what it costs, or says plainly that the answer is open and why.
 
+The design is specified against the eUTXO ledger rather than
+translated from the EVM work, and it draws on two tiers of maturity
+that are worth keeping distinct. The structural primitives —
+reference inputs, inline datums, reference scripts — are Babbage-era
+and long settled. The cryptographic builtins the eligibility verifier
+depends on are not: pairing arrived with Plutus V3, and the
+primitives that make a verifier practical arrived under protocol
+version 11, weeks before this page. Where a claim rests on the second
+tier, the page says so.
+
 ## Where the notary boundary ends
 
 The obligation is unchanged by the chain. What `UI-Charity.md` §8.1
@@ -42,6 +52,18 @@ never that money moved or that aid arrived. A stablecoin or ADA
 settlement rail would be a separate `financialBindings` profile with
 its own finality, refund, and reversal mapping, which this binding
 deliberately does not define.
+
+The same boundary runs through compliance, and stating it as a
+positive is clearer than stating it as an absence. Screening
+obligations — the checks an issuer performs on an organization, and
+any sanctions or identity screening performed before an eligibility
+credential is issued — are discharged **off-chain, at credential
+issuance, by the party holding that authority**. What reaches the
+chain is a proof that a predicate holds, never the material the
+screening ran on. That is why the negative-PII fixtures below can be
+exhaustive rather than best-effort: there is no path by which case
+material enters a datum, a redeemer, or a token name in the first
+place.
 
 ## Authorizing an operator write without a sender
 
@@ -132,17 +154,30 @@ mitigation:
   of an already-public value — but it is a mitigation for the first
   shape, not a third shape.
 
-Scope encoding forces a second decision. Cardano asset names are at
-most 32 bytes, and a BLS12-381 scalar field element already occupies
-32 bytes, so a nullifier used as an asset name leaves **no room for a
-campaign or epoch prefix in the same name**. Campaign and epoch scope
-therefore has to live in the *policy* — a minting policy
-parameterized per campaign, whose policy ID is the scope. That is
-acceptable only because the campaign identifier is already public;
-the profile must state that the policy parameters are derived from
-public campaign data alone and never from anything credential-linked,
-or the policy ID becomes exactly the cross-campaign identifier
-`Charity.md` forbids the nullifier from being.
+Whichever shape wins, the design rests on separating two jobs the
+ledger does not combine on its own — and reading the token as the
+enforcement mechanism is the natural mistake this section exists to
+prevent:
+
+- **Domain separation** comes from a **per-campaign minting policy**,
+  parameterized from public campaign data alone. Scope has to live
+  here because it cannot live in the asset name: Cardano asset names
+  are at most 32 bytes, a BLS12-381 scalar field element already
+  occupies 32, so a nullifier used as an asset name leaves **no room
+  for a campaign or epoch prefix beside it**. The policy ID carries
+  the scope instead. That is acceptable only because the campaign
+  identifier is already public, and the profile must require the
+  parameters be derived from public campaign data and never from
+  anything credential-linked — otherwise the policy ID becomes
+  exactly the cross-campaign identifier `Charity.md` forbids the
+  nullifier from being.
+- **Uniqueness** comes from an **explicit state transition**, not
+  from the token. A campaign- and epoch-scoped registry whose datum
+  commits to the consumed set; an update that proves non-membership
+  before insertion; and consumption in the same transaction that
+  anchors the claim. A minted token marks a spent nullifier
+  publicly — it does not, and cannot, enforce that the nullifier was
+  unspent, for the reason above.
 
 Which shape the profile picks depends on claim concurrency, which no
 deployment has measured because no deployment exists — but that is a
@@ -307,8 +342,13 @@ Cardano equivalent of the BNB profile's `StaleCampaignRevision` /
 The failure is also not free: a transaction failing phase-2 script
 validation **forfeits the submitter's collateral**, and the submitter
 is the operator's relayer account. Off-chain classification is
-therefore not a UX nicety here; it is what keeps a client-side bug
-from burning operator ADA.
+therefore not a UX nicety here; it is what *reduces the risk* of a
+client-side bug reaching phase-2 validation and burning operator ADA.
+It reduces rather than removes, and the profile should say so in
+those terms: pre-flight evaluation runs against a snapshot of ledger
+state, and state can move between evaluation and inclusion. What
+survives that gap is contention, which is why contention is a normal
+class below rather than an exceptional one.
 
 The client behavior half of the BNB table survives; the place it is
 decided does not.
@@ -344,7 +384,7 @@ enumeration the profile must extend `Charity.md` §15 item 7 across:
 
 | Surface | Carries | Rule under this profile ID |
 |---|---|---|
-| Inline datums (CIP-32) | Anchor contents, registry roots, campaign state | Commitments, digests, scoped nullifiers, statuses, timestamps only — typed, with no free-text field |
+| Inline datums ([CIP-32](https://cips.cardano.org/cip/CIP-0032)) | Anchor contents, registry roots, campaign state | Commitments, digests, scoped nullifiers, statuses, timestamps only — typed, with no free-text field |
 | Redeemers | Proof bytes, indices, operation arguments | Same discipline; the sealed recipient payload never appears |
 | Asset names | The nullifier, 32 bytes | Nothing else; scope lives in the policy ID |
 | Policy IDs / script parameters | Campaign scope, admin key hash | Derived from public campaign data only |
@@ -413,7 +453,9 @@ the profile's. That is not a temporary state of affairs —
 sits in the second phase of the Dijkstra roadmap, targeting Q2 2027
 behind Linear Leios in Q4 2026, and those dates are published as
 estimates. A declared depth threshold is therefore the answer for
-this binding's entire plausible build window, not a placeholder.
+this binding's entire plausible build window, not a placeholder, and
+Peras is a possible later optimisation rather than a dependency —
+nothing in this binding waits for it.
 
 A rolled-back anchor is a `conflicting_state` **security event, not a
 retry**, unchanged from both siblings. Cardano adds one wrinkle: a
@@ -603,6 +645,13 @@ claim:
 8. **Declare, list, prove** — manifest entries, discovery listing,
    and the fixture suite green, in that order, before any real
    campaign binds this deployment.
+9. **Preprod pilot, then a mainnet decision** — real campaigns end to
+   end on preprod, the conformance vectors green, and only then a
+   mainnet deployment decision, matching the
+   [Stellar plan](charity-stellar.md)'s final phase. The ordering is
+   the point: the mainnet decision **follows** the audit and the
+   pilot rather than preceding them, and the pilot is where the
+   contention threshold above stops being an estimate.
 
 ## Open profile questions
 
