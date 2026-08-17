@@ -107,12 +107,13 @@ mitigation:
   storage is O(1) and the ADA it locks is *constant*, whatever the
   claim count. Its one problem is contention: each claim spends the
   registry and produces its successor, which **serialises every claim
-  in the scope to one transaction per block**. For a real
-  campaign that is not a performance note, it is a liveness failure:
+  in the scope to one transaction per block**. At sufficient scale
+  that stops being a performance note and becomes a liveness failure:
   concurrent claimants collide, and the only way to sustain
-  throughput is a single party chaining transactions off-chain —
-  which makes the relayer a sequencer and a censorship point the
-  design otherwise avoids.
+  throughput past the ceiling is a single party chaining transactions
+  off-chain — which makes the relayer a sequencer and a censorship
+  point the design otherwise avoids. Where that scale begins is the
+  question resolved below.
 - **Nullifier set as UTXOs** — a sorted on-chain linked list where
   each node is its own UTXO. Insertion proves non-membership by
   spending the node whose bounds cover the new nullifier and
@@ -143,9 +144,30 @@ public campaign data alone and never from anything credential-linked,
 or the policy ID becomes exactly the cross-campaign identifier
 `Charity.md` forbids the nullifier from being.
 
-Which shape the profile picks is an **open question**, and honestly
-so: it depends on expected claim concurrency per epoch, which no
-deployment has yet measured because no deployment exists.
+Which shape the profile picks depends on claim concurrency, which no
+deployment has measured because no deployment exists — but that is a
+reason to resolve it *conditionally*, not to leave it open until the
+validators are already written. The shape fixes the datum schemas and
+the validators, so deferring it past those steps is not an option.
+
+The conditional answer: **the single registry trie is the pilot
+shape**, and the question only becomes live above a stated threshold.
+A registry UTXO sustains one claim per block, which at mainnet's
+roughly twenty-second block time is on the order of a hundred claims
+an hour — orders of magnitude above what a first campaign serving
+tens of beneficiaries over a year generates, where claims arrive
+hours or days apart and collide essentially never. The threshold that
+matters is not the total beneficiary count but the **burst**, and the
+sharpest burst is structural rather than incidental: at an epoch
+rollover every eligible claimant becomes able to claim at the same
+moment. So the shape question becomes live when expected
+same-block arrivals — at rollover, not on average — exceed what one
+spend per block plus a bounded rebuild loop absorbs. The profile
+states that threshold, ships the registry shape, and treats the
+UTXO-per-node structure as the documented migration for a campaign
+that exceeds it. A migration is a new deployment under this profile's
+identity rules, which is a cost worth stating up front rather than
+discovering.
 
 ## Atomicity comes free, contention does not
 
@@ -423,11 +445,13 @@ consequences the Stellar and EVM backends do not have:
   cost. This compounds with the audit argument above: a bigger
   verifier is both more to audit and more expensive to use, every
   time anyone claims.
-- Locked ADA depends on choices not yet made. The registry-trie shape
-  locks a constant amount; the UTXO-per-node shape locks min-UTXO per
-  nullifier permanently, and anchors add more only if they persist as
-  UTXOs rather than as consumable datum commitments. Who funds the
-  floor is an open question with a privacy consequence attached — a
+- Locked ADA is constant under the pilot shape and grows only under
+  the migration. The registry trie locks a fixed amount whatever the
+  claim count; the UTXO-per-node structure locks min-UTXO per
+  nullifier permanently, which is one more reason it is the fallback
+  rather than the default. Anchors add to the floor only if they
+  persist as UTXOs rather than as consumable datum commitments —
+  still open, with a privacy consequence attached, since a
   consolidation strategy is also a linkability strategy.
 
 ## The operator manifest
@@ -497,7 +521,7 @@ deliberate double-satisfaction attempt either way.
   rebuilt:** the BLS12-381 TurboPLONK prover backend in
   `onym-contracts` that the Stellar notary runs today. This binding
   needs new *circuits* on that curve, not a new prover — subject to
-  the transcript check in build step 4, which is the one result that
+  the transcript check in build step 1, which is the one result that
   could overturn it.
 - **One dependency is shared and unbuilt:** the BLS12-381 charity
   eligibility circuits, shared with the
@@ -518,44 +542,65 @@ Cardano proceeds on its own dependency chain. Neither sibling gates
 it and it gates neither, which is the house position and not a new
 claim:
 
-1. **Profile** — write `charity/UI-Charity-Cardano.md`: the
-   authorization mechanism, the nullifier-set shape, datum and
-   redeemer schemas with their public fields, the off-chain error
-   classification and its CIP-57 declaration, deployment identity and
-   the recompute check, the settlement-depth threshold, and the
-   extended negative-PII fixture set over all six surfaces above.
-   `UI-Charity.md` §8.3 sets the bar and it applies unchanged: until
-   that document exists and passes conformance tests, "uses Cardano"
-   is an implementation choice, not evidence that the boundary is
-   satisfied.
-2. **Circuits** — the `membership-set-v1` constraint system over
-   BLS12-381, setup, and verifying keys. Shared with the Stellar
-   charity binding: whichever build reaches them first implements
-   them for both.
-3. **Prover** — expected to be nothing to build. The BLS12-381
+1. **Verifier prototype — first, not fourth.** It comes before the
+   profile because it is the only step that can invalidate the
+   profile. Its questions in order: does a Plutus transcript
+   reproduce the prover's keccak-256 challenges byte-for-byte against
+   an existing proof; and do the MSM, pairing, and scalar-field
+   arithmetic fit one transaction's PV11 budget. A throwaway script
+   against a published verifying key answers both. Every fallback
+   this page lists for a negative answer — shrink the circuit, chain
+   verification across transactions, change proof systems —
+   invalidates the profile's proof section, its atomicity property,
+   and part of its error taxonomy. Writing those first and revising
+   them after would be a rewrite disguised as a revision.
+2. **Profile, in two halves** — `charity/UI-Charity-Cardano.md`. The
+   verifier-independent half can be written immediately and in
+   parallel with step 1: authorization, datum and redeemer schemas
+   with their public fields, deployment identity and the recompute
+   check, the off-chain error classification and its CIP-57
+   declaration, the settlement-depth threshold, and the extended
+   negative-PII fixture set over all six surfaces above. The
+   proof-system half — public-input layout, proof encoding, the
+   atomicity guarantee, and the proof-related error classes — waits
+   on step 1's result. `UI-Charity.md` §8.3 sets the bar for both and
+   applies unchanged: until the document exists and passes
+   conformance tests, "uses Cardano" is an implementation choice, not
+   evidence that the boundary is satisfied.
+3. **Circuits** — the `membership-set-v1` constraint system over
+   BLS12-381, setup, and verifying keys, shared with the
+   [Stellar charity binding](charity-stellar.md). "Shared" is
+   accurate but asymmetric in practice and should not be stated
+   otherwise: circuit design depends on a profile's public-input
+   layout, Stellar has no profile, and Cardano's would be written
+   first — so this binding would *set* the shared circuit interface
+   that the Stellar profile then has to match. That is a coordination
+   dependency, not a symmetric reuse, and the Stellar profile's
+   author should be in the room when the layout is fixed rather than
+   inheriting constraints they never agreed to.
+4. **Prover** — expected to be nothing to build. The BLS12-381
    backend exists and ships in the notary's mobile FFI today, and its
    keccak-256 transcript is reproducible from Plutus builtins; this
    is the one place Cardano starts ahead of the EVM sibling, which
-   still needs a BN254 backend built. "Expected" until step 4
+   still needs a BN254 backend built. "Expected" until step 1
    confirms it at the byte level.
-4. **Verifier prototype, before the validators** — out of order on
-   purpose, because it is the step that can invalidate the three
-   above. Its questions in order: first, does a Plutus transcript
-   reproduce the prover's keccak-256 challenges byte-for-byte against
-   an existing proof; second, does the MSM, pairing, and
-   scalar-field arithmetic fit one transaction's PV11 budget. A
-   throwaway script against a published verifying key answers both.
-   A failure on the first question is the expensive one — it changes
-   the prover and weakens the shared-backend argument that motivates
-   the curve choice.
-5. **Validators** — the charity validators plus the audited verifier,
+5. **Validators** — the charity validators plus the verifier,
    deployed at a parameterized script hash with no upgrade path.
-6. **Relayer Cardano backend** — transaction building, UTXO and
+6. **Audit** — an independent review of the hand-written verifier and
+   the validators, and a line item rather than an assumption, because
+   this page names that verifier as the binding's load-bearing cost
+   and states that no fixture retires it. Its scope is the verifier,
+   the double-satisfaction binding, and the authorization gate; the
+   profile must name who commissions it and publish the result
+   alongside the deployment declaration. A deployment that reaches
+   step 8 without it has not paid the cost this binding was designed
+   around.
+7. **Relayer Cardano backend** — transaction building, UTXO and
    collateral pool management, off-chain evaluation and error
    classification, rollback watching. New; no other binding shares
    it, and if a Cardano notary binding is ever written it inherits
    this rather than the reverse.
-7. **Declare, list, prove** — manifest entries, discovery listing,
+8. **Declare, list, prove** — manifest entries, discovery listing,
    and the fixture suite green, in that order, before any real
    campaign binds this deployment.
 
@@ -564,13 +609,16 @@ claim:
 Collected, because each is a place this page refused to invent an
 answer:
 
-1. **Nullifier-set shape** — single registry UTXO, UTXO-per-node
-   sorted structure, or sharded registry. Decided by expected claim
-   concurrency per epoch, which is unmeasured.
+1. **Nullifier-set contention threshold** — the shape itself is
+   resolved conditionally above (registry trie for the pilot,
+   UTXO-per-node as the documented migration). What is open is the
+   number: the same-block arrival rate, measured at epoch rollover
+   rather than on average, at which the registry stops absorbing
+   contention. The profile states it; a pilot measures it.
 2. **Verifier feasibility** — whether the MSM, pairing, and
    scalar-field arithmetic fit one transaction's PV11 execution-unit
    budget, and which fallback applies if not. Settled by prototype
-   (build step 4), not by argument.
+   (build step 1), not by argument.
 3. **Prover divergence** — the residual risk behind the shared-prover
    claim. The transcript hash is keccak-256 and Plutus has the
    builtin, so the claim survives inspection, but only a byte-level
@@ -578,9 +626,11 @@ answer:
    turns out to be unreproducible in Plutus, the prover changes, the
    backend stops being shared, and the strategic argument for the
    curve choice weakens accordingly.
-4. **Min-UTXO funding and anchor storage** — who funds the floor the
-   chosen nullifier shape implies, and whether anchors persist as
-   UTXOs at all; consolidation strategy is also linkability strategy.
+4. **Anchor storage and its ADA floor** — the registry shape makes
+   the nullifier structure's own cost constant, so what remains open
+   is whether anchors persist as UTXOs at all rather than as
+   consumable datum commitments, and who funds the floor if they do.
+   Consolidation strategy is also linkability strategy.
 5. **Double-satisfaction mitigation** — positional output binding
    versus a one-script-input-per-transaction rule, and what the
    latter costs if anchor batching later becomes a required privacy
