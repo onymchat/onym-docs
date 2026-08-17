@@ -6,7 +6,15 @@ here runs**: no contract, no circuits, no fixtures — see the
 observer below inspects the binding as specified; every "what they
 see" is what they *would* see on a deployment that does not exist.
 The [Stellar plan](charity-stellar.md) shares most rows with a
-smaller explorer ecosystem.*
+smaller explorer ecosystem. The
+[Cardano plan](charity-cardano.md#every-surface-that-can-carry-bytes)
+states four deltas — decoded inline datums, per-campaign
+nullifier-token pages, a persistent collateral pool, and no event log
+at all — and they stay on that page rather than becoming rows here
+because they follow from a ledger model this page's row structure
+assumes away. They move here when that binding has a profile to
+analyze; the inferences below are the ones that hold across all
+three.*
 
 The charity trail puts commitments, nullifiers, and status changes on
 a public, heavily indexed chain on purpose — that is what makes the

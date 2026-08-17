@@ -258,5 +258,8 @@ binding's own testnet pilot.
   rail exposes, mitigation by mitigation.
 - [Who holds which role](charity-roles.md) — the abstract roles mapped
   to concrete parties, including the unassigned ones.
+- [Cardano](charity-cardano.md) — the eUTXO sibling, which reaches
+  the same obligations without `msg.sender`, mutable mappings, or
+  typed revert selectors.
 - [Notary — BNB Chain](notary-bnb.md) — the merged EVM profile whose
   hardening rules the charity profile restates.

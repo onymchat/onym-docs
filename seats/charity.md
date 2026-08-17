@@ -29,9 +29,10 @@ the messenger-side application profile. Both are drafts.
 **Implementations:** [Stellar/Soroban](charity-stellar.md) — a
 **plan**, its profile unwritten ·
 [BNB Chain](charity-bnb.md) — a **merged specification**
-([`UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)).
-No charity code exists in any Onym repository, and neither binding
-waits for the other to deliver.
+([`UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)) ·
+[Cardano](charity-cardano.md) — a **plan**, its profile unwritten.
+No charity code exists in any Onym repository, and no binding waits
+for another to deliver.
 
 This page stays deliberately free of any one blockchain, payment rail,
 or aid program — so does the contract, explicitly: it requires no
@@ -202,7 +203,7 @@ installed an app, or was "converted."
 
 Nowhere, yet — and this book doesn't pretend otherwise. The abstract
 boundary leaves ledgers, proof systems, and rails to implementation
-profiles, and two are planned:
+profiles, and three are planned:
 
 - **[Stellar/Soroban](charity-stellar.md)** — the planned reference
   binding: Soroban contracts as the campaign's notary binding, riding
@@ -213,6 +214,12 @@ profiles, and two are planned:
   profile is [merged](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
   — interface, errors, encodings, fixtures — with the code
   explicitly nonexistent.
+- **[Cardano](charity-cardano.md)** — the eUTXO sibling: Plutus
+  validators verifying the same **BLS12-381** proofs as the Stellar
+  plan, reusing the notary's existing prover. Its profile document is
+  unwritten, and the ledger model replaces `msg.sender`, mutable
+  mappings, and typed reverts with mechanisms that cost something
+  different.
 
 Two companion pages keep the seat honest at the system level:
 [the adversary's view](charity-adversary.md) states what a public
