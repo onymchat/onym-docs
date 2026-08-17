@@ -6,7 +6,10 @@ here runs**: no contract, no circuits, no fixtures — see the
 observer below inspects the binding as specified; every "what they
 see" is what they *would* see on a deployment that does not exist.
 The [Stellar plan](charity-stellar.md) shares most rows with a
-smaller explorer ecosystem.*
+smaller explorer ecosystem; the
+[Cardano plan](charity-cardano.md#every-surface-that-can-carry-bytes)
+states its own deltas — decoded datums, per-campaign nullifier-token
+pages, and a persistent collateral pool.*
 
 The charity trail puts commitments, nullifiers, and status changes on
 a public, heavily indexed chain on purpose — that is what makes the

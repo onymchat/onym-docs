@@ -147,6 +147,9 @@ Everything below is unbuilt; the order is the dependency chain:
 - [BNB Chain](charity-bnb.md) — the same obligations re-proved over
   BN254 for the EVM, with the merged profile this plan's profile
   must mirror. Neither binding waits for the other to deliver.
+- [Cardano](charity-cardano.md) — the third binding, sharing this
+  plan's curve, prover, and unbuilt circuits; with a shared curve,
+  separation between the two rests on the statement tag alone.
 - [The adversary's view](charity-adversary.md) — what a public trail
   exposes; most rows apply to Stellar with a smaller explorer
   ecosystem.
