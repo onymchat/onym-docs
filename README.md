@@ -36,8 +36,8 @@ starts it (or, for a plan, to the work that would).
 Contract only, no code in any Onym repository: **recovery trustee**,
 **audit**, **arbitration**, **lead generation**, **acquisition**,
 **sponsor**, **recruitment**. The **[backup](seats/backup.md)** seat
-has a draft contract and a draft
-[object-HTTP implementation profile](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup-Object-HTTP.md)
+has a draft contract and a merged
+[object-HTTP implementation profile](seats/backup-object-http.md)
 — wire mapping, sealing, restore, erasure, and export are all pinned —
 but no adapter, no operator, and no fixtures. The
 **[charity](seats/charity.md)** seat has draft contracts, a

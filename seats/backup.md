@@ -12,11 +12,16 @@ when that person loses their key — because any mechanism that let it do
 so would also let it read the archive.
 
 **Contract:** [`backup/UI-Backup.md`](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup.md)
-— the technology-free boundary this page summarizes.
-**Implementation:** [`backup/UI-Backup-Object-HTTP.md`](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup-Object-HTTP.md)
-— object storage over HTTPS, the first profile and so far the only one.
-Both are drafts, and **no backup code exists in any Onym repository**:
-no conforming adapter, no conforming operator, no fixture suite.
+— the technology-free boundary this page describes.
+**Implementations:** [Object-HTTP](backup-object-http.md) — the
+first profile, and so far the only one. No backup code exists in any
+Onym repository; both the contract and the profile are drafts.
+
+This page stays deliberately free of any one storage technology — so
+does the contract. A concrete implementation may use object storage, a
+content-addressed network, an institutional archive, removable media,
+or another mechanism entirely, as long as it satisfies the same
+opacity, integrity, retention, erasure, export, and error semantics.
 
 This boundary is deliberately narrow, and two neighbors mark its edges.
 Identity and recovery own the root secret and the authority to act as a
@@ -106,17 +111,6 @@ availability, complete erasure, or a copy held anywhere else.
   archive. There is no operator recourse, because every mechanism that
   would provide one — an escrow, a wrapped key, a support-driven reset —
   is also a mechanism for reading the archive.
-- **Preflight is mandatory, and it's cheap.** A payment refusal has to
-  cost one small request, never a completed multi-hundred-megabyte
-  upload.
-- **Export never consults entitlements.** Not "consult and allow" —
-  no access at all. It's the only way the promise that a lapsed payment
-  never holds a person's own history hostage survives future edits to
-  the code.
-- **Padding follows a Padmé bucket, not a power-of-two ladder.** Overhead
-  stays under about 12% instead of potentially doubling stored bytes,
-  which matters once storage is already linear in holders and can't be
-  deduplicated away.
 
 ## Terms bind forward, never backward
 
@@ -154,23 +148,27 @@ and neither does withholding export until arrears are paid.
 
 ## Where the code is
 
-Nowhere, yet. The abstract contract and its one implementation profile
-are both drafts, and the profile says so directly: no conforming
-adapter, no conforming operator, no fixtures exist on either side.
+- **[Object-HTTP](backup-object-http.md)** — the merged implementation
+  profile: object storage over HTTPS, with the wire mapping, sealing
+  suite, and payment refusal fully pinned. The design is settled; the
+  code does not exist.
 
-The object-HTTP profile itself names what it still leaves open:
-incremental upload that stays verifiable without leaking a change map to
-the operator; a re-bind path after access-key rotation, so rotating
-doesn't strand every snapshot sealed under the old key; and a disclosure
-pattern for the third-party-cost problem above that's honest without
-being unusable. Until fixtures land, the fallback rule already in force
-elsewhere in the system stands: local state stays out of any cloud
-backup unless the person explicitly includes it.
+The abstract contract itself names what any profile has to settle
+before it's executable at all: digest suite, sealing and key
+derivation, proof of possession for restore, wire framing, erasure
+receipt semantics, the portable export container, and payment refusal.
+Two gaps are named as design work rather than profile detail, and the
+first profile solves neither: incremental upload that stays verifiable
+without leaking a change map to the operator, and a disclosure pattern
+for the third-party-cost problem above that's honest without being
+unusable.
 
 ## Next steps
 
 - **Identity and recovery** own the root secret this seat is built
   around but never carries — no seat page exists yet for either.
+- [Object-HTTP](backup-object-http.md) — the one implementation profile
+  that exists today.
 - [Courier](courier.md) — carries messages and blobs in motion; this
   seat is the device's own archive of what it already received, not a
   substitute route for either.
