@@ -14,8 +14,8 @@ so would also let it read the archive.
 **Contract:** [`backup/UI-Backup.md`](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup.md)
 — the technology-free boundary this page describes.
 **Implementations:** [Object-HTTP](backup-object-http.md) — the
-first profile, and so far the only one. No backup code exists in any
-Onym repository; both the contract and the profile are drafts.
+first profile, and so far the only one, merged in `onym-system`. No
+backup code exists in any Onym repository; both are merged drafts.
 
 This page stays deliberately free of any one storage technology — so
 does the contract. A concrete implementation may use object storage, a
@@ -24,8 +24,9 @@ or another mechanism entirely, as long as it satisfies the same
 opacity, integrity, retention, erasure, export, and error semantics.
 
 This boundary is deliberately narrow, and two neighbors mark its edges.
-Identity and recovery own the root secret and the authority to act as a
-person — a backup restores *history*, never *identity*, and a snapshot
+[Identity](identity.md) and recovery own the root secret and the
+authority to act as a person — a backup restores *history*, never
+*identity*, and a snapshot
 can never legally contain seed material, a recovery artifact, or a
 trustee share. Live attachments belong to blob storage and messages in
 flight to the courier seat; this boundary is a device's own archive of
@@ -92,11 +93,14 @@ availability, complete erasure, or a copy held anywhere else.
 
 ## Choices worth noting
 
-- **The seed is the root, not a device-scoped key.** A snapshot sealed
-  under key material a device can't export is unrestorable on exactly
-  the device that will ever need it — a replacement. A client whose local
-  storage is device-bound has to decrypt and re-seal, not copy its
-  database files.
+- **Sealing keys derive from holder-held input, not a device-scoped
+  key.** A snapshot sealed under key material a device can't export is
+  unrestorable on exactly the device that will ever need it — a
+  replacement. A client whose local storage is device-bound has to
+  decrypt and re-seal, not copy its database files. (Which holder-held
+  input — the recovery seed itself, or something derived and stored
+  separately — is a profile decision with its own cost either way; see
+  [Object-HTTP](backup-object-http.md#the-root-is-the-recovery-seed-not-a-device-key).)
 - **Every snapshot draws a fresh salt.** Keying is never convergent or
   content-derived, so two people sealing identical archives produce
   unrelated ciphertext and unrelated digests — nobody can confirm a
@@ -165,8 +169,9 @@ unusable.
 
 ## Next steps
 
-- **Identity and recovery** own the root secret this seat is built
-  around but never carries — no seat page exists yet for either.
+- [Identity](identity.md) — owns the root secret this seat is built
+  around but never carries. Recovery trustee owns the authority to act
+  as a person when that secret is lost; no seat page exists yet for it.
 - [Object-HTTP](backup-object-http.md) — the one implementation profile
   that exists today.
 - [Courier](courier.md) — carries messages and blobs in motion; this

@@ -14,8 +14,10 @@ else with what it holds.
 **Code:** none.
 
 This page summarizes what the profile pins, so a reader can judge the
-design without the full normative text. Every suite, header, error
-code, and fixture is the profile itself.
+design without the full normative text. Every suite, header, and error
+code named below is defined there — as is the required conformance
+fixture list, which specifies what an implementation must test, not a
+suite that runs today (see [Honest status](#honest-status)).
 
 ## What the mapping pins
 
@@ -158,5 +160,7 @@ operator being left.
 ## Next steps
 
 - [Backup](backup.md) — the abstract seat this implements.
-- **Identity and recovery** — where the BIP39 seed this profile derives
-  every key from actually lives; no seat page exists yet for either.
+- [Identity](identity.md) — where the BIP39 seed this profile derives
+  every key from actually lives. Recovery trustee also has a hand in
+  the access key's fate (§16.2 of the abstract contract), but no seat
+  page exists yet for it.
