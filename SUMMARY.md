@@ -18,6 +18,7 @@
 * [Courier](seats/courier.md)
 * [Identity](seats/identity.md)
 * [Discovery](seats/discovery.md)
+* [Backup (plan)](seats/backup.md)
 
 ## Operating
 
