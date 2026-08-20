@@ -19,6 +19,7 @@
   * [Who holds which role](seats/charity-roles.md)
 * [Courier](seats/courier.md)
 * [Identity](seats/identity.md)
+  * [BIP-39 implementation](seats/identity-bip39.md)
 * [Discovery](seats/discovery.md)
 * [Backup (plan)](seats/backup.md)
   * [Object-HTTP (spec)](seats/backup-object-http.md)
