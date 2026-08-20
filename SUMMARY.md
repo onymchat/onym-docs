@@ -4,13 +4,8 @@
 
 ## Seats
 
-* [Moderation](seats/moderation.md)
-  * [iOS implementation](seats/moderation-ios.md)
-  * [Android implementation](seats/moderation-android.md)
-  * [Run your own authority](seats/run-your-own-authority.md)
-* [Notary](seats/notary.md)
-  * [Stellar/Soroban implementation](seats/notary-stellar.md)
-  * [BNB Chain plan](seats/notary-bnb.md)
+* [Backup (plan)](seats/backup.md)
+  * [Object-HTTP (spec)](seats/backup-object-http.md)
 * [Charity (plan)](seats/charity.md)
   * [Stellar/Soroban plan](seats/charity-stellar.md)
   * [BNB Chain (spec)](seats/charity-bnb.md)
@@ -20,12 +15,17 @@
 * [Courier](seats/courier.md)
   * [Nostr/Blossom implementation](seats/courier-nostr.md)
   * [Classical (plan)](seats/courier-classical.md)
-* [Identity](seats/identity.md)
-  * [BIP-39 implementation](seats/identity-bip39.md)
 * [Discovery](seats/discovery.md)
   * [Static Snapshot / Ed25519 implementation](seats/discovery-static-ed25519.md)
-* [Backup (plan)](seats/backup.md)
-  * [Object-HTTP (spec)](seats/backup-object-http.md)
+* [Identity](seats/identity.md)
+  * [BIP-39 implementation](seats/identity-bip39.md)
+* [Moderation](seats/moderation.md)
+  * [iOS implementation](seats/moderation-ios.md)
+  * [Android implementation](seats/moderation-android.md)
+  * [Run your own authority](seats/run-your-own-authority.md)
+* [Notary](seats/notary.md)
+  * [Stellar/Soroban implementation](seats/notary-stellar.md)
+  * [BNB Chain plan](seats/notary-bnb.md)
 
 ## Operating
 
