@@ -120,10 +120,6 @@ recommended forever.
 
 What exists, honestly:
 
-- **The contract and profile are merged** in `onym-system`
-  ([PR #28](https://github.com/onymchat/onym-system/pull/28)); the
-  profile's §11 is the single source of truth for implementation
-  status.
 - **A reference implementation runs**:
   [`onym-discovery`](https://github.com/onymchat/onym-discovery) is a
   Rust CLI that signs, verifies, and chains manifests and snapshots,

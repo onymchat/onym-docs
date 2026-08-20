@@ -60,8 +60,9 @@ classical profile would answer differently on purpose:
   distinct status codes.
 - **Fan-out policy** — whether a classical courier follows Nostr's
   "every listed relay" rule, Blossom's "first listed server" rule, or
-  states its own, and how [Discovery](discovery.md)'s manifest format
-  would need to grow a new profile-declared fan-out field to carry it.
+  states its own, and how
+  [Discovery's manifest format](discovery-static-ed25519.md) would
+  need to grow a new profile-declared fan-out field to carry it.
 - **Retention and deletion semantics** a conventional database makes
   easy to offer (TTLs, explicit per-message erasure) that the current
   profile's gap list gestures at but doesn't specify.
