@@ -6,8 +6,8 @@ server-side seat up on one DigitalOcean droplet via Docker Compose.
 | Service | Host | Seat |
 |---|---|---|
 | Caddy | — | reverse proxy, automatic TLS |
-| strfry | `nostr.onym.app` | [courier — message](seats/courier.md) |
-| blossom | `blossom.onym.app` | [courier — blob](seats/courier.md) |
+| strfry | `nostr.onym.app` | [courier — message](seats/courier-nostr.md) |
+| blossom | `blossom.onym.app` | [courier — blob](seats/courier-nostr.md) |
 | relayer | `relayer.onym.app` | [notary — Stellar](seats/notary-stellar.md) |
 | moderation | `moderation.onym.app` | [moderation](seats/moderation.md) — enforcement |
 | authority | `authority.onym.app` | [moderation](seats/moderation.md) — judgment |

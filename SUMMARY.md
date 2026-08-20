@@ -18,6 +18,8 @@
   * [The adversary's view](seats/charity-adversary.md)
   * [Who holds which role](seats/charity-roles.md)
 * [Courier](seats/courier.md)
+  * [Nostr/Blossom implementation](seats/courier-nostr.md)
+  * [Classical (plan)](seats/courier-classical.md)
 * [Identity](seats/identity.md)
   * [BIP-39 implementation](seats/identity-bip39.md)
 * [Discovery](seats/discovery.md)
