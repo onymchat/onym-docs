@@ -15,6 +15,12 @@ map it onto a concrete stack. This book's seat pages document the
 abstract contracts; each one links onward to whichever implementations
 exist for it — running code, a merged spec, or just a named plan.
 
+[**Open the visual seat map →**](seat-map.md)
+
+The map shows the independently ownable roles inside every documented
+seat. A company may occupy several roles, but doing so never merges the
+authority each role is allowed to exercise.
+
 ## A user's path through them
 
 **[Identity](seats/identity.md)** comes first, because everything else
