@@ -22,9 +22,15 @@ a punishment.
 · profiles: [DeviceCheck](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation-DeviceCheck.md),
 [device recall](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation-Device-Recall.md)
 **Code:** [`onym-moderation`](https://github.com/onymchat/onym-moderation) (Rust)
+· clients: [`onym-ios`](https://github.com/onymchat/onym-ios),
+[`onym-android`](https://github.com/onymchat/onym-android)
 
-Want to operate one yourself? Jump straight to
-[Run your own authority](run-your-own-authority.md).
+Want to operate a judgment service yourself? Jump straight to
+[Run your own authority](run-your-own-authority.md). Building or
+auditing an interface instead? See
+[Moderation — iOS](moderation-ios.md) or
+[Moderation — Android](moderation-android.md) for the platform-specific
+half of the contract.
 
 ## The words you'll keep seeing
 
@@ -46,15 +52,21 @@ run by **different organizations**:
 - **`authority/`** holds the verdict signing key and the judgment. It
   can open cases, decide them, and sign verdicts. It has *no code path*
   that writes a device mark.
-- **`apple/`** (the interface's enforcement backend) holds the Apple
-  DeviceCheck key. It can read and write device bits — but it can only
-  do so when executing a verdict that validates against the terms the
-  user consented to. It cannot originate a verdict.
+- **`apple/`** (the interface's Apple DeviceCheck backend) and
+  **`android/`** (the interface's Google Play Integrity backend) each
+  hold one platform's attestation key. Either can read and write its
+  own platform's device bits — but only when executing a verdict that
+  validates against the terms the user consented to. Neither can
+  originate a verdict. See [Moderation — iOS](moderation-ios.md) and
+  [Moderation — Android](moderation-android.md) for how each binds the
+  contract to its platform, including where the Android binding still
+  trails the iOS one.
 
-They share no library. They agree on bytes over the wire, and each side
-pins that agreement with its own tests. An authority that could write
-marks, or an interface that could invent verdicts, would collapse the
-whole design — one party would again hold both judgment and enforcement.
+None of these share a library with the authority, or with each other.
+They agree on bytes over the wire, and each side pins that agreement
+with its own tests. An authority that could write marks, or an
+interface that could invent verdicts, would collapse the whole design —
+one party would again hold both judgment and enforcement.
 
 ## How a case flows
 
@@ -147,7 +159,10 @@ they never land in an access log. The signature covers
 `query-status:<caseId>:<timestamp>` and expires after five minutes.
 Knowing a case id proves nothing; it is not a credential.
 
-**Interface** (run by the app vendor):
+**Interface** (run by the app vendor; shown here as one shape, but
+`apple/` and `android/` are separate deployments with separate keys —
+see [iOS](moderation-ios.md) / [Android](moderation-android.md) for
+what differs):
 
 | Route | What it's for |
 |---|---|
@@ -175,14 +190,20 @@ authority publishes today:
 This is alpha software and the contract is candid about the distance
 between spec and code. The gaps most worth knowing:
 
-- **The interface's signature enforcement defaults off.** The service's
-  `MODERATION_ENFORCE_SIGNATURES` ships `false` (the reference
-  deployment sets it `true`); the iOS client, by contrast, enforces
-  both manifest and verdict signatures unconditionally. Context: the
-  consent loop itself closed only recently — the iOS client now
-  registers the finalized, interface-countersigned mandate with the
-  authority from its consent flow — so treat the loop as freshly
-  wired, not battle-tested.
+- **The interfaces' signature enforcement defaults off.** Both
+  `apple/` and `android/` ship `MODERATION_ENFORCE_SIGNATURES=false`
+  (the reference deployment sets it `true`); the iOS client, by
+  contrast, enforces both manifest and verdict signatures
+  unconditionally. Context: the consent loop itself closed only
+  recently — the iOS client now registers the finalized,
+  interface-countersigned mandate with the authority from its consent
+  flow — so treat the loop as freshly wired, not battle-tested.
+- **Android has no device-recovery path yet.** `apple/`'s
+  `POST /v1/recover` is fully built; `android/`'s answers 501 by
+  design, and the Kotlin client has no equivalent flow. A banned
+  Android device whose enrollment doesn't survive a reinstall
+  currently has no machine path back. See
+  [Moderation — Android](moderation-android.md#deferred-recovery).
 - **New-holder claims can't be authenticated.** A device's new owner is,
   by definition, not the mandated identity — the claim path exists but
   is honesty-based and capped, not proof.
@@ -192,6 +213,11 @@ between spec and code. The gaps most worth knowing:
   written down as a standalone spec. (Beware: Foundation's
   `JSONSerialization` sorts keys case-insensitively and will produce
   bytes the authority can't reproduce.)
+- **Android device recall is gated on Google.** Play Integrity's
+  device-recall beta must be granted per Play Console account before
+  bans persist at the device level; until then an interim flag trades
+  that persistence away rather than blocking gating entirely. See
+  [Moderation — Android](moderation-android.md#honest-status).
 - **External appeal routing isn't built.** A manifest can name an
   external appellate authority, but nothing routes to it yet.
 
@@ -199,5 +225,10 @@ between spec and code. The gaps most worth knowing:
 
 - [Run your own authority](run-your-own-authority.md) — the step-by-step
   operator guide.
+- [Moderation — iOS](moderation-ios.md) — the Apple DeviceCheck
+  interface, backend and client.
+- [Moderation — Android](moderation-android.md) — the Google Play
+  Integrity interface, backend and client, including where it still
+  trails iOS.
 - [Deployment](../deployment.md) — how the Onym reference deployment
-  brings both services up on one box.
+  brings these services up on one box.

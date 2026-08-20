@@ -23,7 +23,7 @@ starts it (or, for a plan, to the work that would).
 
 | Seat | Reference implementation | Live at |
 |---|---|---|
-| [Moderation](seats/moderation.md) | [`onym-moderation`](https://github.com/onymchat/onym-moderation) — `authority/` + `apple/` | `authority.onym.app`, `moderation.onym.app` |
+| [Moderation](seats/moderation.md) | [`onym-moderation`](https://github.com/onymchat/onym-moderation) — `authority/` + [`apple/`](seats/moderation-ios.md) + [`android/`](seats/moderation-android.md) | `authority.onym.app`, `moderation.onym.app`, `moderation-android.onym.app` |
 | [Notary](seats/notary.md) | [Stellar/Soroban](seats/notary-stellar.md): [`onym-contracts`](https://github.com/onymchat/onym-contracts) (5 Soroban contracts) + [`onym-relayer`](https://github.com/onymchat/onym-relayer); a [BNB implementation](seats/notary-bnb.md) is planned, unbuilt | Stellar testnet, `relayer.onym.app` |
 | [Courier](seats/courier.md) | strfry (Nostr) + blossom-server, wired in [`onym-infra`](https://github.com/onymchat/onym-infra) | `nostr.onym.app`, `blossom.onym.app` |
 | [Identity](seats/identity.md) | [`onym-sdk-swift`](https://github.com/onymchat/onym-sdk-swift) / [`onym-sdk-kotlin`](https://github.com/onymchat/onym-sdk-kotlin), consumed by the clients | on device |
