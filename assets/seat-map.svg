@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1120" role="img" aria-labelledby="title description">
+  <title id="title">Onym seats and the roles inside each seat</title>
+  <desc id="description">A person or group sits at the center and chooses seven independently replaceable seats: Identity, Discovery, Courier, Notary, Moderation, Backup, and Charity. Each seat contains the roles that participate in that authority boundary.</desc>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f7f8;
+      --card: #ffffff;
+      --card-strong: #f0f1f3;
+      --ink: #171719;
+      --muted: #66666d;
+      --line: #d7d8dd;
+      --accent: #276ef1;
+      --accent-soft: #eaf0ff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111113;
+        --card: #19191c;
+        --card-strong: #222226;
+        --ink: #f2f2f4;
+        --muted: #a7a7ae;
+        --line: #39393f;
+        --accent: #73a7ff;
+        --accent-soft: #1b2c4e;
+      }
+    }
+    text { fill: var(--ink); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .background { fill: var(--bg); }
+    .edge { fill: none; stroke: var(--line); stroke-width: 2; }
+    .edge-dot { fill: var(--accent); }
+    .seat { fill: var(--card); stroke: var(--line); stroke-width: 2; }
+    .seat-title { font-size: 24px; font-weight: 750; letter-spacing: -0.02em; }
+    .seat-subtitle { fill: var(--muted); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .divider { stroke: var(--line); stroke-width: 1; }
+    .role { font-size: 16px; font-weight: 540; }
+    .role-dot { fill: var(--accent); }
+    .center-ring { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+    .center-core { fill: var(--card); stroke: var(--accent); stroke-width: 2; }
+    .center-overline { fill: var(--accent); font-size: 13px; font-weight: 750; letter-spacing: 0.14em; }
+    .center-title { font-size: 27px; font-weight: 780; letter-spacing: -0.025em; }
+    .center-copy { fill: var(--muted); font-size: 15px; }
+    .legend { fill: var(--card-strong); stroke: var(--line); stroke-width: 1; }
+    .legend-copy { fill: var(--muted); font-size: 14px; }
+  </style>
+
+  <rect class="background" width="1440" height="1120" rx="28" />
+
+  <!-- A line means choice or interaction, never ownership. -->
+  <path class="edge" d="M720 560 C620 450 500 330 390 268" />
+  <path class="edge" d="M720 560 C720 430 720 320 720 268" />
+  <path class="edge" d="M720 560 C820 450 940 330 1050 268" />
+  <path class="edge" d="M720 560 C850 560 980 560 1092 560" />
+  <path class="edge" d="M720 560 C820 680 940 790 1050 852" />
+  <path class="edge" d="M720 560 C720 700 720 810 720 852" />
+  <path class="edge" d="M720 560 C620 680 500 790 390 852" />
+
+  <!-- Identity -->
+  <g transform="translate(40 40)">
+    <rect class="seat" width="430" height="286" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Identity</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="112" r="3.5" /><text class="role" x="43" y="118">Identity holder</text>
+    <circle class="role-dot" cx="30" cy="143" r="3.5" /><text class="role" x="43" y="149">Vault implementation author</text>
+    <circle class="role-dot" cx="30" cy="174" r="3.5" /><text class="role" x="43" y="180">Custody or hardware provider</text>
+    <circle class="role-dot" cx="30" cy="205" r="3.5" /><text class="role" x="43" y="211">Capability requester</text>
+    <circle class="role-dot" cx="30" cy="236" r="3.5" /><text class="role" x="43" y="242">Association registry</text>
+    <circle class="role-dot" cx="30" cy="267" r="3.5" /><text class="role" x="43" y="273">UI publisher</text>
+  </g>
+
+  <!-- Discovery -->
+  <g transform="translate(505 40)">
+    <rect class="seat" width="430" height="286" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Discovery</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="112" r="3.5" /><text class="role" x="43" y="118">Instance operator</text>
+    <circle class="role-dot" cx="30" cy="143" r="3.5" /><text class="role" x="43" y="149">Discovery provider</text>
+    <circle class="role-dot" cx="30" cy="174" r="3.5" /><text class="role" x="43" y="180">Catalog sponsor</text>
+    <circle class="role-dot" cx="30" cy="205" r="3.5" /><text class="role" x="43" y="211">Auditor / attestation issuer</text>
+    <circle class="role-dot" cx="30" cy="236" r="3.5" /><text class="role" x="43" y="242">Client</text>
+    <circle class="role-dot" cx="30" cy="267" r="3.5" /><text class="role" x="43" y="273">User or group</text>
+  </g>
+
+  <!-- Courier -->
+  <g transform="translate(970 40)">
+    <rect class="seat" width="430" height="286" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Courier</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="118" r="3.5" /><text class="role" x="43" y="124">UI owner</text>
+    <circle class="role-dot" cx="30" cy="153" r="3.5" /><text class="role" x="43" y="159">Application-protocol author</text>
+    <circle class="role-dot" cx="30" cy="188" r="3.5" /><text class="role" x="43" y="194">Adapter author</text>
+    <circle class="role-dot" cx="30" cy="223" r="3.5" /><text class="role" x="43" y="229">Courier operator</text>
+    <circle class="role-dot" cx="30" cy="258" r="3.5" /><text class="role" x="43" y="264">User or group</text>
+  </g>
+
+  <!-- Notary -->
+  <g transform="translate(970 382)">
+    <rect class="seat" width="430" height="306" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Notary</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="112" r="3.5" /><text class="role" x="43" y="118">UI owner</text>
+    <circle class="role-dot" cx="30" cy="149" r="3.5" /><text class="role" x="43" y="155">Policy author</text>
+    <circle class="role-dot" cx="30" cy="186" r="3.5" /><text class="role" x="43" y="192">Notary operator</text>
+    <circle class="role-dot" cx="30" cy="223" r="3.5" /><text class="role" x="43" y="229">Submission provider</text>
+    <circle class="role-dot" cx="30" cy="260" r="3.5" /><text class="role" x="43" y="266">Read provider</text>
+    <circle class="role-dot" cx="30" cy="287" r="3.5" /><text class="role" x="43" y="293">Group</text>
+  </g>
+
+  <!-- Moderation -->
+  <g transform="translate(970 744)">
+    <rect class="seat" width="430" height="316" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Moderation</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="112" r="3.5" /><text class="role" x="43" y="118">User</text>
+    <circle class="role-dot" cx="30" cy="149" r="3.5" /><text class="role" x="43" y="155">Reporter</text>
+    <circle class="role-dot" cx="30" cy="186" r="3.5" /><text class="role" x="43" y="192">Moderation authority</text>
+    <circle class="role-dot" cx="30" cy="223" r="3.5" /><text class="role" x="43" y="229">Interface</text>
+    <circle class="role-dot" cx="30" cy="260" r="3.5" /><text class="role" x="43" y="266">Device-mark platform</text>
+    <circle class="role-dot" cx="30" cy="297" r="3.5" /><text class="role" x="43" y="303">Accused</text>
+  </g>
+
+  <!-- Backup -->
+  <g transform="translate(40 744)">
+    <rect class="seat" width="430" height="316" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Backup</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="128" r="3.5" /><text class="role" x="43" y="134">UI owner</text>
+    <circle class="role-dot" cx="30" cy="171" r="3.5" /><text class="role" x="43" y="177">Application-protocol author</text>
+    <circle class="role-dot" cx="30" cy="214" r="3.5" /><text class="role" x="43" y="220">Backup-adapter author</text>
+    <circle class="role-dot" cx="30" cy="257" r="3.5" /><text class="role" x="43" y="263">Backup operator</text>
+    <circle class="role-dot" cx="30" cy="300" r="3.5" /><text class="role" x="43" y="306">User</text>
+  </g>
+
+  <!-- Charity -->
+  <g transform="translate(505 744)">
+    <rect class="seat" width="430" height="316" rx="20" />
+    <text class="seat-subtitle" x="26" y="34">Seat</text>
+    <text class="seat-title" x="26" y="66">Charity</text>
+    <line class="divider" x1="26" y1="82" x2="404" y2="82" />
+    <circle class="role-dot" cx="30" cy="112" r="3.5" /><text class="role" x="43" y="118">User application</text>
+    <circle class="role-dot" cx="30" cy="143" r="3.5" /><text class="role" x="43" y="149">Charity operator</text>
+    <circle class="role-dot" cx="30" cy="174" r="3.5" /><text class="role" x="43" y="180">Organization credential issuer</text>
+    <circle class="role-dot" cx="30" cy="205" r="3.5" /><text class="role" x="43" y="211">Eligibility issuer</text>
+    <circle class="role-dot" cx="30" cy="236" r="3.5" /><text class="role" x="43" y="242">Financial provider</text>
+    <circle class="role-dot" cx="30" cy="267" r="3.5" /><text class="role" x="43" y="273">Notary</text>
+    <circle class="role-dot" cx="30" cy="298" r="3.5" /><text class="role" x="43" y="304">Auditor / report issuer</text>
+  </g>
+
+  <!-- The chooser is deliberately not a seat. -->
+  <circle class="center-ring" cx="720" cy="560" r="154" />
+  <circle class="center-core" cx="720" cy="560" r="124" />
+  <text class="center-overline" x="720" y="516" text-anchor="middle">NOT A SEAT</text>
+  <text class="center-title" x="720" y="553" text-anchor="middle">Person or group</text>
+  <text class="center-copy" x="720" y="584" text-anchor="middle">chooses each seat</text>
+  <text class="center-copy" x="720" y="608" text-anchor="middle">and can replace its actors</text>
+
+  <circle class="edge-dot" cx="720" cy="406" r="5" />
+  <circle class="edge-dot" cx="874" cy="560" r="5" />
+  <circle class="edge-dot" cx="720" cy="714" r="5" />
+  <circle class="edge-dot" cx="566" cy="560" r="5" />
+
+  <g transform="translate(40 1080)">
+    <rect class="legend" width="1360" height="24" rx="12" />
+    <text class="legend-copy" x="680" y="17" text-anchor="middle">Large boundary = seat  ·  blue bullet = role  ·  line = choice or interaction, never ownership</text>
+  </g>
+</svg>

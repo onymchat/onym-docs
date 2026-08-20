@@ -1,6 +1,7 @@
 # Table of contents
 
 * [Onym seats](README.md)
+* [Seat map](seat-map.md)
 
 ## Seats
 
