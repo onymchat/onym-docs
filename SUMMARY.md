@@ -5,6 +5,8 @@
 ## Seats
 
 * [Moderation](seats/moderation.md)
+  * [iOS implementation](seats/moderation-ios.md)
+  * [Android implementation](seats/moderation-android.md)
   * [Run your own authority](seats/run-your-own-authority.md)
 * [Notary](seats/notary.md)
   * [Stellar/Soroban implementation](seats/notary-stellar.md)
