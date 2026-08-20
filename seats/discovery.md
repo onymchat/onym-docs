@@ -1,224 +1,130 @@
 # Discovery
 
-How does your app find a relayer to submit proofs through, a moderation
-authority to consent to, a Nostr relay to speak over? Someone has to
-publish that list — and whoever publishes it holds real power, because
-a list decides who serves and who judges. The discovery seat exists to
-make that power **signed, inspectable, and replaceable**: catalogs you
-can verify, providers you can swap, and a guarantee that absence from
-every catalog never blocks you from using an instance you found
-yourself.
+How does your app find a relayer to submit proofs through, a
+moderation authority to consent to, a courier to speak over? Someone
+has to publish that list — and whoever publishes it holds real power,
+because a list decides who serves and who judges. The discovery seat
+exists to make that power **signed, inspectable, and replaceable**:
+catalogs you can verify, providers you can swap, and a guarantee that
+absence from every catalog never blocks you from using an instance you
+found yourself.
 
 **Contract:** [`discovery/Discovery.md`](https://github.com/onymchat/onym-system/blob/main/discovery/Discovery.md)
-· profile: [static snapshot / Ed25519](https://github.com/onymchat/onym-system/blob/main/discovery/Discovery-Static-Ed25519.md)
-(merged, with running reference code)
-**Code:** [`onym-discovery`](https://github.com/onymchat/onym-discovery)
-(reference CLI + conformance fixtures)
+**Implementations:** [Static snapshot / Ed25519](discovery-static-ed25519.md)
+— the only profile that exists today, merged with running reference
+code.
 
-Two realities coexist on this page, and both are real. The
-**operational path** — what every shipping client reads today — is a
-handful of unsigned GitHub release assets, documented first below. The
-**signed-catalog path** is the merged implementation profile with a
-reference implementation, merged client packages, and a live provider
-at `discovery.onym.app`; it is what the release assets migrate onto,
-and it is documented after.
+This contract "does not require a search engine, DNS system,
+transport, storage layer, ranking algorithm, payment rail,
+jurisdiction, or business model." A concrete implementation profile
+must define canonical encodings, transport, pagination, signatures,
+and test vectors — the current static-snapshot profile is one way to
+answer those questions, not the only shape the contract allows.
 
-## Today's operational path: release assets
+An **instance** is one concrete operator, deployment, application,
+institution, or offer for a seat's role, described by a signed
+manifest. Discovery indexes *references* to those manifests — it never
+becomes a root of trust, and catalog inclusion is a recommendation,
+never protocol approval or proof of safety.
 
-What runs today is the mechanism, not the seat: five GitHub release
-assets that clients fetch at
-`https://github.com/onymchat/<repo>/releases/latest/download/<asset>`.
-A release asset, **not** a path in the tree — editing `main` changes
-nothing any user sees. That is deliberate: these files decide who serves
-and who judges, so they move on a reviewed, dated, revertible artifact.
+## The roles, kept apart on purpose
 
-| Asset | Repo | Consumer |
-|---|---|---|
-| `relayers.json` | `onym-relayer` | clients pick a Soroban relayer |
-| `nostr-relays.json` | `onym-relayer` | clients connect to **all** listed |
-| `blossom-servers.json` | `onym-relayer` | clients use the **first** listed |
-| `contracts-manifest.json` | `onym-contracts` | the relayer's contract allowlist |
-| `authorities.json` | `onym-authorities` | the iOS moderation picker |
+| Role | What it controls — and only that |
+|---|---|
+| **Instance operator** | One concrete seat instance, and its signed service or institutional manifest. |
+| **Discovery provider** | Selects manifest references under its own published policy, signs catalog snapshots, answers queries, discloses ranking and commercial relationships. |
+| **Catalog sponsor** | May fund a catalog for a declared audience. Funding doesn't silently change the provider's policy. |
+| **Auditor / attestation issuer** | Signs scoped evidence about one exact instance or artifact. Discovery may cite it, but can't speak for its issuer. |
+| **Client** | Verifies catalogs and manifests, applies local compatibility checks, preserves direct import, and shows the source and basis of every recommendation. |
+| **User or group** | Chooses which Discovery sources to consult, and which downstream instance — if any — to select. |
 
-### Server manifests
+One party may hold several roles, but the signed objects keep their
+authorities separate. A Discovery provider that also operates, audits,
+sponsors, or earns from a listed instance discloses that relationship
+on the affected entry.
 
-```json
-{ "version": 1, "relays": [ { "name": "Onym Official", "url": "wss://nostr.onym.app", "isDefault": true } ] }
-```
+## How a listing actually reaches a user
 
-`scripts/validate-server-manifest.py` enforces the shape at release time:
-Nostr URLs `wss://`/`ws://`, Blossom `https://`/`http://`, at most one
-`isDefault`. `relayers.json` entries carry `name`, `url` (an origin) and
-`networks`; the request body still selects the Stellar network.
+1. An instance operator publishes a signed manifest under its
+   destination seat's own contract.
+2. A Discovery provider retrieves and verifies that manifest, applies
+   its published inclusion policy, and records only a digest-bound
+   reference — never a copy it could quietly edit.
+3. The provider publishes a signed, expiring catalog snapshot.
+4. The client obtains the provider's own manifest through direct
+   import, a user-selected source, or a replaceable application
+   default.
+5. The client verifies provider identity, snapshot signature,
+   sequence, policy digest, expiry, bounds, and requested seat type.
+6. The client fetches candidate instance manifests, verifies their
+   operator signatures and digests, and evaluates compatibility
+   locally.
+7. The UI shows catalog source, relevant evidence, commercial
+   relationship, and material risk or compatibility information.
+8. The user or group explicitly selects an instance under that
+   instance's own seat contract.
 
-Third-party operators add themselves by PR against the tracked file; the
-release workflow validates HTTPS URLs, unique origins and supported
-networks before publishing.
+Fetching, viewing, or ranking an entry grants the instance no
+capability and creates no downstream order — discovery completion is
+not service selection.
 
-### `contracts-manifest.json`
+## What a catalog's policy has to disclose
 
-Cumulative — the union of every historical release's contracts, not just
-the latest tag — so old and new deployments stay allowlisted together.
+Every catalog pins a human-readable, machine-identifiable policy
+naming: eligible seat types, profiles, jurisdictions, and audiences;
+required manifest freshness and availability checks; required
+attestations and their issuers and maximum ages, if any; legal,
+safety, quality, or accessibility criteria; listing, subscription,
+sponsorship, referral, and common-ownership terms; ranking inputs and
+their priority; removal, correction, appeal, and conflict processes;
+review cadence and catalog expiry; and what the provider does *not*
+verify.
 
-### `authorities.json`
+A provider may curate — it isn't required to list every technically
+compatible instance — but it can't claim completeness without a
+reproducible source population and measurement time. Paid placement is
+allowed only when disclosed and never described as an audit,
+certification, or organic rank. A client that re-ranks locally must
+not attribute the resulting order to the provider.
 
-```json
-{
-  "authorities": [{
-    "componentId": "onym:component:<id>",
-    "name": "Shown in the picker",
-    "manifestURL": "https://<host>/manifest.json",
-    "apiBaseURL": "https://<host>",
-    "operatorPublicKeyBase64": "<base64 of 32 raw bytes>"
-  }]
-}
-```
+## No provider is a root authority
 
-The operator key is duplicated here **on purpose**. The client verifies
-verdicts against this key, not the one in the fetched manifest, so an
-attacker who can substitute a manifest cannot also substitute the key it
-is checked against. That property holds only if the value was obtained
-out of band — from the operator, or from the running service's `/health`,
-never by fetching the manifest.
+Every conforming client supports a direct manifest path — paste, scan,
+file import, deep link, local configuration, or another profile's
+mechanism — validated with the same signature, schema, and
+compatibility checks a catalog result gets. A client may ship a
+default Discovery provider, but only while it also lets the user add,
+remove, and replace sources; never silently restores a removed source;
+labels which source produced each recommendation; preserves direct
+import; and never treats absence from the default as protocol
+invalidity.
 
-Note the encoding split: base64 of raw bytes here, `onym:key:<hex>`
-everywhere else.
+Discovery itself bootstraps through direct import or a replaceable
+application default. A Discovery provider may list other Discovery
+providers, but no provider is required to list itself, and no
+recursive catalog establishes a root authority.
 
-```sh
-python3 -c "import base64,sys; print(base64.b64encode(bytes.fromhex(sys.argv[1])).decode())" <hex>
-```
+## What this seat admits it can't promise
 
-**Publishing the first release turns moderation on** for every user on a
-build that reads this. The consent gate blocks only when the directory
-yields entries; until then the app runs unmoderated. It is a product
-change, not a registration step.
-
-Adding an authority: get the key out of band → fetch their manifest and
-confirm `operator` and `componentId` match → read the published terms
-their class `definition` URLs point at → PR → release.
-
-### The gap that motivates everything below
-
-Signature verification on these assets is **soft** today. The fetcher
-accepts an optional detached `.sig` and checks it when present; absence
-is not fatal, because the release-signing pipeline is not live. Until it
-is, the only control protecting these catalogs is who can publish
-releases on those repositories. Restrict that accordingly.
-
-## The signed-catalog path
-
-The merged
-[static-snapshot / Ed25519 profile](https://github.com/onymchat/onym-system/blob/main/discovery/Discovery-Static-Ed25519.md)
-replaces trust-the-host with verify-the-bytes. A provider is just an
-Ed25519 keypair and a static file host: it publishes a self-signed
-`manifest.json` naming its catalogs, and each catalog is a signed
-snapshot — the full list in one file, which your client downloads whole
-and filters **locally**, so no server ever learns what you searched
-for. Snapshots chain: each carries a sequence number and the hash of
-its predecessor's exact bytes, so a provider that rolls back, forks, or
-quietly rewrites history produces cryptographic evidence against
-itself. The first time you add a provider, your client shows the
-operator key's fingerprint and **pins it** (trust-on-first-use); after
-that, a file signed by any other key is an alarm, never a silent
-rotation. And catalogs expire on a hard ceiling, so a compromised or
-abandoned listing ages out instead of being recommended forever.
-
-What exists, honestly:
-
-- **The contract and profile are merged** in `onym-system`
-  ([PR #28](https://github.com/onymchat/onym-system/pull/28)); the
-  profile's §11 is the single source of truth for implementation
-  status.
-- **A reference implementation runs**:
-  [`onym-discovery`](https://github.com/onymchat/onym-discovery) is a
-  Rust CLI that signs, verifies, and chains manifests and snapshots,
-  and publishes the byte-pinned conformance fixtures clients must
-  match — after the merged gap-closure sweep
-  ([#3](https://github.com/onymchat/onym-discovery/pull/3)), most of
-  the profile's §10 vectors are published as fixtures and the rest
-  (the chain-behavior cases) are covered by in-repo tests, with the
-  privacy trace discharged as a client obligation — plus deployment
-  templates and a publish runbook.
-- **A provider is live**: `discovery.onym.app` serves a signed
-  provider manifest and the `onym-services` catalog, with its
-  inclusion policy and privacy profile pinned by digest. Its operator
-  fingerprint is published below.
-- **Client packages are merged**: iOS
-  ([#244](https://github.com/onymchat/onym-ios/pull/244)–[#247](https://github.com/onymchat/onym-ios/pull/247))
-  and Android
-  ([#204](https://github.com/onymchat/onym-android/pull/204)–[#208](https://github.com/onymchat/onym-android/pull/208))
-  — fetching, TOFU key pinning, chain verification, source management,
-  and the consent UI, wired behind the legacy fetchers as a fallback.
-
-## Operator fingerprints
-
-When you add a discovery provider, your client shows you an operator
-key fingerprint and asks you to confirm it before pinning
-(trust-on-first-use). That confirmation is only as good as the value
-you compare it against — so here are the reference operators'
-fingerprints, published out of band from the services themselves.
-**Compare the fingerprint on your app's TOFU screen against the value
-below.** If they match, confirm and the key is pinned; if they don't,
-stop — you are not talking to the operator this page describes.
-
-| Service | Fingerprint | Operator key |
-|---|---|---|
-| `discovery.onym.app` (discovery) | `4d:a9:ec:c9:e8:6f:6e:97` | `onym:key:42b0da001104dd03052c7feddab9520c920c9e40d11b245c46c27cf6be853f24` |
-| `relayer.onym.app` (notary) | `28:77:a5:5c:c4:ae:20:ec` | `onym:key:8c836293161a3ee2e4c2e338851d88289a2db494efc6342d9fb7ac0c516936ad` (manifest `validUntil` 2027-08-14) |
-
-The live `onym-services` catalog also lists these operators for the
-other seats. Their manifests are indexed by the catalog, so the pinned
-discovery key already protects them — but the keys are repeated here
-for out-of-band comparison:
-
-| Service | Fingerprint | Operator key |
-|---|---|---|
-| `onym-authority` (moderation) | `fd:92:53:ed:1f:1e:35:7d` | `onym:key:bdec68a8440f36591dd822748f86fee3582794b3d20445b06953db6f266f3dca` |
-| `onym-courier` (transport.message) | `6b:14:cd:ea:7e:95:be:60` | `onym:key:92500a19c43193c8945aa91b94878b0c986f2c4da500de4c2caea29103aaa84f` |
-| `onym-blossom` (blob.storage) | `4a:e9:35:23:ef:49:b6:00` | `onym:key:e446f2b18e9f75e13397ebdff0f2e40610c9e745aa11308b04c8b607f7dea094` |
-
-A fingerprint is the first 8 bytes, colon-separated hex, of the
-SHA-256 of the key's 32 raw public-key bytes. Every value above was
-verified on **2026-08-15** against the manifests actually served at
-`https://discovery.onym.app/manifest.json`,
-`https://relayer.onym.app/manifest.json`, and the operators listed in
-`https://discovery.onym.app/catalogs/onym-services.json`, with the
-fingerprints recomputed from the served keys. If this page and your
-TOFU screen ever disagree, treat the disagreement itself as the
-signal and ask before pinning.
-
-## Honest limits
-
-The profile's own gaps section is candid, and this page will not
-outrun it:
-
-- **The release assets have not migrated.** `discovery.onym.app` is
-  live and serves a signed catalog, but the shipping clients still
-  read the release assets above as their operational path; migrating
-  them onto the signed catalogs is explicitly listed as remaining
-  work.
-- **Some checks live only in the reference CLI.** Duplicate-key
-  rejection, the detached-`.sig` verify path, and cross-catalog
-  equivocation / source-conflict detection are implemented and
-  fixtured in `onym-discovery`, but neither client package runs them
-  yet. The clients also still approximate an expired provider manifest
-  as a plain refresh failure, don't surface entry-vs-manifest field
-  conflicts under their proper error, and leave several of the
-  profile's error codes unreachable.
-- **The intermediate-fetch continuity walk is implemented nowhere.**
-  Every implementation degrades a forward jump straight to
-  accept-with-note without first trying the retained-sibling fetches
-  the profile's §6 requires, so a provably broken chain hidden behind
-  a jump is indistinguishable from a retention failure. The profile's
-  §11 enumerates this and the smaller remainders honestly — it is the
-  single place to check before trusting any status claim, including
-  this page's.
+- **Only one implementation profile exists.** The contract began as
+  proposed architecture and names its implementation status as
+  "tracked solely by that profile's §11" — there is no second profile
+  to compare it against yet.
+- **A catalog entry is a recommendation, not a guarantee.** Inclusion
+  never certifies safety, availability, or that a listed operator is
+  still the one it was when the catalog was signed.
+- **Curation is allowed to be incomplete**, as long as a completeness
+  claim, if made at all, defines a reproducible source population and
+  measurement time rather than asserting coverage nobody checked.
 
 ## Next steps
 
-- [Notary](notary.md) — the relayers today's `relayers.json` points at,
-  and the operator manifest the live catalog already indexes.
-- [Moderation](moderation.md) — the authorities `authorities.json`
-  feeds into the iOS picker.
+- [Static snapshot / Ed25519](discovery-static-ed25519.md) — the one
+  implementation profile that exists, what runs today versus what's
+  still migrating onto it, and the operator fingerprints worth
+  checking by hand.
+- [Notary](notary.md) — the relayers a discovery catalog points at.
+- [Moderation](moderation.md) — the authorities a discovery catalog
+  feeds into a client's picker.
 - [Deployment](../deployment.md) — how the reference deployment brings
   the server-side seats up.

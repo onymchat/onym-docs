@@ -23,6 +23,7 @@
 * [Identity](seats/identity.md)
   * [BIP-39 implementation](seats/identity-bip39.md)
 * [Discovery](seats/discovery.md)
+  * [Static Snapshot / Ed25519 implementation](seats/discovery-static-ed25519.md)
 * [Backup (plan)](seats/backup.md)
   * [Object-HTTP (spec)](seats/backup-object-http.md)
 
