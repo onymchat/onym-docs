@@ -27,7 +27,7 @@ starts it (or, for a plan, to the work that would).
 | [Notary](seats/notary.md) | [Stellar/Soroban](seats/notary-stellar.md): [`onym-contracts`](https://github.com/onymchat/onym-contracts) (5 Soroban contracts) + [`onym-relayer`](https://github.com/onymchat/onym-relayer); a [BNB implementation](seats/notary-bnb.md) is planned, unbuilt | Stellar testnet, `relayer.onym.app` |
 | [Courier](seats/courier.md) | [Nostr/Blossom](seats/courier-nostr.md): strfry (Nostr) + blossom-server, wired in [`onym-infra`](https://github.com/onymchat/onym-infra); a [classical database-backed courier](seats/courier-classical.md) is planned, unbuilt | `nostr.onym.app`, `blossom.onym.app` |
 | [Identity](seats/identity.md) | [BIP-39](seats/identity-bip39.md): [`onym-ios`](https://github.com/onymchat/onym-ios) / [`onym-android`](https://github.com/onymchat/onym-android) (derivation + `IdentityRepository`), over shared primitives from [`onym-sdk-swift`](https://github.com/onymchat/onym-sdk-swift) / [`onym-sdk-kotlin`](https://github.com/onymchat/onym-sdk-kotlin) | on device |
-| [Discovery](seats/discovery.md) | Five GitHub release assets across three repos (operational) + [`onym-discovery`](https://github.com/onymchat/onym-discovery) reference CLI for the signed-catalog profile | `releases/latest/download/*` (what clients read), `discovery.onym.app` (signed catalog) |
+| [Discovery](seats/discovery.md) | legacy release assets (operational) + [`onym-discovery`](https://github.com/onymchat/onym-discovery) reference CLI for the [Static Snapshot / Ed25519](seats/discovery-static-ed25519.md) signed-catalog profile | `releases/latest/download/*` (what clients read), `discovery.onym.app` (signed catalog) |
 
 [Deployment](deployment.md) brings the server-side seats up on one box.
 

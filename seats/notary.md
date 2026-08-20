@@ -100,8 +100,9 @@ it or refuses. Prover availability is a capability, not a preference —
 a client without the right prover refuses to join rather than
 substitute evidence.
 
-[Discovery](discovery.md) is how you find the choices. Today it lists
-Soroban relayers — a name, a URL, and supported Stellar networks — and
+[Discovery](discovery.md) is how you find the choices. Today's
+[operational asset list](discovery-static-ed25519.md) names Soroban
+relayers — a name, a URL, and supported Stellar networks — and
 the live signed catalog at `discovery.onym.app` already indexes the
 reference relayer's operator manifest. As more notaries appear, it
 grows into a catalog of operators run by **different parties**, each

@@ -33,7 +33,8 @@ Neither container publishes a host port.
 
 ## Fan-out rules
 
-The two manifests differ deliberately (see [Discovery](discovery.md)):
+The two manifests differ deliberately (see
+[Discovery — Static Snapshot / Ed25519](discovery-static-ed25519.md)):
 
 - **Nostr** — clients connect to **every** listed relay.
 - **Blossom** — clients upload and download via the **first** listed
@@ -67,7 +68,8 @@ renewal, revocation and broker registration are unimplemented. Signed
 operator manifests for both couriers now exist —
 `discovery.onym.app` hosts and indexes `onym-courier` and
 `onym-blossom` manifests declaring the operator key, size limits,
-retention class, and privacy profile (see [Discovery](discovery.md))
+retention class, and privacy profile (see
+[Discovery — Static Snapshot / Ed25519](discovery-static-ed25519.md))
 — but the legacy lists the shipping clients actually read still bind
 no operator, limits, retention, or privacy terms. Conformance rests
 on mirrored app tests rather than one fixture suite.

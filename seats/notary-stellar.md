@@ -54,8 +54,8 @@ the [BNB backend](notary-bnb.md) is built, its `eip155` networks join
 the same manifest; the manifest, not the app, is what says which
 chains an operator serves. The live signed catalog at
 `discovery.onym.app` already indexes this manifest — see
-[Discovery](discovery.md) for the operator key fingerprint to compare
-on your TOFU screen.
+[Discovery — Static Snapshot / Ed25519](discovery-static-ed25519.md)
+for the operator key fingerprint to compare on your TOFU screen.
 
 ## For developers
 

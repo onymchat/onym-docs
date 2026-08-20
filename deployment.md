@@ -145,8 +145,8 @@ bytes.
 ## Discovery provider
 
 `discovery.onym.app` is live, but nothing in this repository serves it
-directly — the signed [discovery](seats/discovery.md) provider is
-published by `onym-discovery`'s own manual deploy workflow
+directly — the signed [discovery](seats/discovery-static-ed25519.md)
+provider is published by `onym-discovery`'s own manual deploy workflow
 ([#4](https://github.com/onymchat/onym-discovery/pull/4), merged; the
 genesis publish has run and the live catalog is at sequence 1). The
 `workflow_dispatch` `deploy.yml` builds the reference CLI, signs and
