@@ -6,6 +6,9 @@ seat's newest binding: a by-copy sibling of the
 tests rather than shared code, and trailing it by one endpoint on
 purpose.
 
+**Status:** Running alpha implementation; device recovery is not
+implemented and durable recall depends on Google beta access.
+
 **Profile:** [`moderation/Moderation-Device-Recall.md`](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation-Device-Recall.md)
 (implements the [abstract moderation contract](moderation.md))
 **Code:** [`onym-moderation/android`](https://github.com/onymchat/onym-moderation/tree/main/android) (Rust backend)

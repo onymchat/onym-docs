@@ -154,7 +154,7 @@ correlate them.
 
 **What they see.** One relayer EOA signs and pays per EVM deployment
 it serves — and the operator's signed manifest publicly binds that
-EOA to the same ed25519 operator identity as its other-chain
+EOA to the same Ed25519 operator identity as its other-chain
 deployments (today, the Stellar notary submitter). The linkage across
 chains is the manifest, by design; the linkage within a chain is the
 EOA itself. Either way, one inspectable operational graph.

@@ -1,4 +1,4 @@
-# Charity — Stellar/Soroban (plan)
+# Charity — Stellar/Soroban
 
 *Seat implementation page, draft 0.3 — 15 August 2026.*
 
@@ -7,6 +7,8 @@ There are no charity contracts in [`onym-contracts`](https://github.com/onymchat
 no charity circuits, and no charity endpoints in the relayer. Read
 this as the intended build, in dependency order — not as documentation
 of running code.
+
+**Status:** Plan; profile and code not implemented.
 
 **Profile:** must be written — a `charity/UI-Charity-Stellar.md` in
 `onym-system`, binding the
@@ -108,7 +110,7 @@ What the chain actually verifies, in the contract's terms:
    trusting the operator's API.
 
 The predicates are the policy's; the proof system is this profile's.
-The [BNB plan](charity-bnb.md) re-proves the same predicates over
+The [merged BNB specification](charity-bnb.md) re-proves the same predicates over
 BN254 without changing their meaning.
 
 ## The plan, in phases

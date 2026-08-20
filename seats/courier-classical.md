@@ -1,7 +1,9 @@
 # Courier — Classical
 
-*Seat implementation page, draft 0.1 — 20 August 2026. Specification:
-not written. Code: none — see [Honest status](#honest-status).*
+*Seat implementation page, draft 0.1 — 20 August 2026.*
+
+**Status:** Plan; profiles and code not implemented. See
+[Honest status](#honest-status).
 
 **Profile:** must be written — a `message/UI-Message-Classical.md` and
 a `blob/UI-Blob-Classical.md` in `onym-system`, binding the

@@ -1,7 +1,9 @@
 # Backup — Object-HTTP
 
-*Seat implementation page, draft 0.1 — 19 August 2026. Specification:
-merged. Code: none — see [Honest status](#honest-status).*
+*Seat implementation page, draft 0.1 — 19 August 2026.*
+
+**Status:** Specification merged; code not implemented. See
+[Honest status](#honest-status).
 
 **Profile:** [`backup/UI-Backup-Object-HTTP.md`](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup-Object-HTTP.md)
 — merged in `onym-system`. It implements the abstract
@@ -26,7 +28,7 @@ suite that runs today (see [Honest status](#honest-status)).
 | Operator endpoint | HTTPS origin, operations under `/v1/` |
 | Snapshot reference | `sha256:<64 lowercase hex>` over the exact sealed byte sequence |
 | Sealing | AES-256-GCM over 1 MiB plaintext chunks under a per-snapshot key |
-| Key derivation | HKDF-SHA256 from the holder's BIP39 seed |
+| Key derivation | HKDF-SHA256 from the holder's BIP-39 seed |
 | Access authorization | Request-bound Ed25519 proof of possession, single-use |
 | Holder identity at the operator | An Ed25519 public key, and nothing else |
 | Increment model | None; whole snapshot, transfer-chunked |
@@ -38,7 +40,7 @@ mapping the portable `onym:backup-profile:sealed-device-archive-v1`.
 
 ## The root is the recovery seed, not a device key
 
-All key material derives from the holder's BIP39 seed — the same
+All key material derives from the holder's BIP-39 seed — the same
 mnemonic that recovers identity — through distinct HKDF contexts: an
 archive root, a fresh per-snapshot key drawn through a random salt, and
 a pair of access keys scoped to the operator's `componentId`. This
@@ -160,7 +162,7 @@ operator being left.
 ## Next steps
 
 - [Backup](backup.md) — the abstract seat this implements.
-- [Identity](identity.md) — where the BIP39 seed this profile derives
+- [Identity](identity.md) — where the BIP-39 seed this profile derives
   every key from actually lives. Recovery trustee also has a hand in
   the access key's fate (§16.2 of the abstract contract), but no seat
   page exists yet for it.

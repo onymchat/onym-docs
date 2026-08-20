@@ -1,7 +1,9 @@
 # Charity — BNB Chain
 
-*Seat implementation page, draft 0.3 — 15 August 2026. Specification:
-merged. Code: none — see [Honest status](#honest-status).*
+*Seat implementation page, draft 0.3 — 15 August 2026.*
+
+**Status:** Specification merged; code not implemented. See
+[Honest status](#honest-status).
 
 **Profile:** [`charity/UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)
 — merged in `onym-system` (draft 0.1). It binds the abstract
@@ -149,7 +151,7 @@ and `delegatecall` dispatch are prohibited under this profile ID.
 The relayer's signed, byte-served operator manifest — live today on
 the Stellar notary side — would gain the charity profile entry, the
 `cha-anchor` deployments it administers, and `eip155` network entries
-binding the ed25519 operator identity to the secp256k1
+binding the Ed25519 operator identity to the secp256k1
 `submitterAccount` that pays gas and the `adminAccount` whose
 `msg.sender` the operator-attested entrypoints accept. The normative
 client check carries over from the
