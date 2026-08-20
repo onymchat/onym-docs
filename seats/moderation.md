@@ -86,12 +86,13 @@ one party would again hold both judgment and enforcement.
 4. **The accused responds — or doesn't.** Responses are accepted even
    late. Answering early never shortens the window; a ban is refused
    until the full consented window has elapsed.
-5. **A human decides.** A moderator reviews the case and dismisses or
-   bans, always with signed reasoning. Deciding is the only path from a
-   report to a sanction, and it requires a human's token — there is no
-   automatic escalation. (An optional local model can *triage* cases,
-   but its recommendation only becomes a decision in a mode the
-   manifest itself must declare.)
+5. **A human decides by default.** In the normal and advisory modes, a
+   moderator reviews the case and dismisses or bans, always with signed
+   reasoning; a local model may only help triage. An authority may use
+   autonomous model decisions only when the exact model and mode were
+   declared in the manifest before consent. In every mode, a decision
+   is the only path from a report to a sanction; silence still becomes
+   dismissal at the deadline.
 6. **The verdict travels.** The authority delivers the signed verdict
    to the interface, together with the exact manifest bytes the
    accused's mandate pinned. The interface validates everything

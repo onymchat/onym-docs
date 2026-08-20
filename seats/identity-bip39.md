@@ -5,6 +5,9 @@ running client actually uses: one twelve-word mnemonic, generated
 on-device, deterministically fans out into every purpose-specific key
 the identity contract requires.
 
+**Status:** Running alpha implementation with major capability,
+rotation, and conformance gaps.
+
 **Profile:** [`identity/UI-Identity-BIP39.md`](https://github.com/onymchat/onym-system/blob/main/identity/UI-Identity-BIP39.md)
 (`onym:identity-implementation:bip39-multikey-v1`, mapping the abstract
 `onym:identity-profile:vault-capability-v1`) — implements the abstract

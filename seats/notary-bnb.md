@@ -1,4 +1,4 @@
-# Notary — BNB Chain (plan)
+# Notary — BNB Chain
 
 This page describes an implementation that **does not exist yet**.
 The design is merged and settled — the profile document is the source
@@ -6,6 +6,9 @@ of truth, and its gaps list is the work plan — but there are no BN254
 circuits, no Solidity contracts, and no EVM code in the relayer. Read
 this as a map of what is coming and what it will change, not as
 documentation of running code.
+
+**Status:** Implementation plan with a merged specification; code not
+implemented.
 
 **Profile:** [`notary/UI-Notary-BNB.md`](https://github.com/onymchat/onym-system/blob/main/notary/UI-Notary-BNB.md)
 (implements the [abstract notary contract](notary.md); sibling of the
@@ -92,7 +95,7 @@ What BNB adds to that manifest, not beside it:
 
 - a second entry in `implementationProfiles`
   (`onym:notary-implementation:bnb-evm-sep-plonk-bn254-v1`);
-- `eip155` entries in `networks`, each binding the ed25519 operator
+- `eip155` entries in `networks`, each binding the Ed25519 operator
   identity to two distinct secp256k1 accounts: the `submitterAccount`
   that pays gas and the `adminAccount` whose `msg.sender` the
   contracts' `setRestrictedMode` accepts. Client deployment

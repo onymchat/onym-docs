@@ -1,8 +1,12 @@
 # Run your own authority
 
-This guide takes you from an empty server to a working moderation
-authority: keys generated, terms published, the service running, and a
-moderator able to decide cases. It assumes you've read the
+This application runbook takes you from a checked-out repository and a
+TLS-ready host to a configured moderation authority: keys generated,
+terms published, the service running, and a moderator able to decide
+cases. Host provisioning, reverse-proxy configuration, process
+supervision, firewalling, and operating-system hardening are outside its
+scope; use the [reference deployment](../deployment.md) as the concrete
+Docker Compose example. It assumes you've read the
 [Moderation overview](moderation.md) — you should know what a mandate,
 a manifest, and a verdict are before operating a service that issues
 them.
@@ -318,7 +322,7 @@ an order that never leaves a signature covering different bytes
 get two queues — **awaiting decision** (open cases, soonest deadline
 first, with urgency markers inside two days and a note on whether the
 response window has closed) and **appeals awaiting review** (ordinary
-appeals and new-holder claims, labelled) — plus an audit log and the
+appeals and new-holder claims, labeled) — plus an audit log and the
 device-recovery queue. Decisions from the panel are recorded as human
 decisions.
 

@@ -34,10 +34,11 @@ No provider's absence from a catalog ever blocks direct use.
 
 **[Courier](seats/courier.md)** carries what they actually send: small
 encrypted messages and media blobs, moved by an operator who can see
-routing addresses and byte counts but never plaintext. A courier
-doesn't know who's talking, doesn't know what they're saying, and
-can't hold a conversation hostage to its own continued operation —
-replacing one is the point.
+routing addresses, timing, and byte counts but never plaintext. That
+metadata can still reveal patterns, and an unavailable courier can
+interrupt delivery or make retained blobs unavailable. The boundary's
+promise is narrower: the operator cannot read the content, and clients
+can replace it without changing the application protocol.
 
 **[Notary](seats/notary.md)** enters once more than one person needs
 to agree on something durable — a group's membership, whose turn it is
@@ -52,9 +53,11 @@ to a different one later.
 and everybody benefits from having. At the moment someone joins an
 interface, they consent to one specific authority under its exact
 published terms — before any dispute exists. If abuse happens later,
-that authority alone can open a case, and only a human decision, never
-silence, can turn into a sanction. No platform-wide trust-and-safety
-team, no authority with power over people who never agreed to it.
+that authority alone can open a case. A human decides by default; an
+authority may instead use a local model only when its manifest declares
+that autonomous mode before the user consents. Silence can never turn
+into a sanction. No platform-wide trust-and-safety team, no authority
+with power over people who never agreed to it.
 
 **[Backup](seats/backup.md)** protects what a person has already
 built. A phone gets lost, stolen, or replaced, and an operator holding
@@ -69,16 +72,28 @@ money reached a real program, and a beneficiary needs help without
 handing over their whole identity to get it. The seat composes an
 operator, a credential issuer, a financial provider, a notary, and an
 auditor as separately replaceable roles, so a beneficiary can prove
-they're *eligible* for aid without ever proving who they *are*.
+they're *eligible* for aid without publishing who they *are*. An issuer
+or regulated provider may still require private identity evidence under
+its own declared purpose and retention terms.
 
 ## What exists today
 
-Nothing here is production-grade: alpha, unaudited, and several
-load-bearing pieces are open work. Each seat page states plainly what
-runs, what's merely specified, and what's still a plan — the honest
-answer differs by seat and sometimes by implementation within a seat,
-so this book doesn't summarize it in one table anymore. Start from the
-seat page and follow its own "Implementations" line.
+Nothing here is production-grade: running components are alpha and
+unaudited, and several load-bearing pieces remain open work. As of
+20 August 2026, the shortest honest status map is:
+
+| Seat | Most mature implementation | Status |
+|---|---|---|
+| [Identity](seats/identity.md) | BIP-39 | Running in both clients; major capability, rotation, and conformance gaps |
+| [Discovery](seats/discovery.md) | Static snapshot / Ed25519 | Signed provider and client packages exist; shipping clients still prefer legacy unsigned assets |
+| [Courier](seats/courier.md) | Nostr/Blossom | Running; material receipt, verification, payment, and replication gaps |
+| [Notary](seats/notary.md) | Stellar/Soroban | Running on Stellar testnet; not production-audited |
+| [Moderation](seats/moderation.md) | DeviceCheck / device recall | iOS and Android services run; Android recovery and platform-access gaps remain |
+| [Backup](seats/backup.md) | Object-HTTP | Specification merged; no code |
+| [Charity](seats/charity.md) | BNB Chain | Specification merged; no code; Stellar and Cardano remain plans |
+
+Each seat page links to its implementation pages, where the status and
+limitations are described in full.
 
 ## Named, not yet built
 

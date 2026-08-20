@@ -1,7 +1,9 @@
 # Charity — Cardano
 
-*Seat implementation page, draft 0.1 — 17 August 2026. Specification:
-not written. Code: none — see [Honest status](#honest-status).*
+*Seat implementation page, draft 0.1 — 17 August 2026.*
+
+**Status:** Plan; profile and code not implemented. See
+[Honest status](#honest-status).
 
 **Profile:** must be written — a `charity/UI-Charity-Cardano.md` in
 `onym-system`, binding the
@@ -31,6 +33,30 @@ depends on are not: pairing arrived with Plutus V3, and the
 primitives that make a verifier practical arrived under protocol
 version 11, weeks before this page. Where a claim rests on the second
 tier, the page says so.
+
+## At a glance
+
+This is a design and feasibility document, not implementation
+documentation. Its current conclusions are:
+
+- **Boundary:** Cardano would bind Charity's notary and eligibility
+  ports only; it would not hold or settle charitable funds.
+- **Authorization:** required signers parameterized into the script hash
+  are the leading replacement for EVM's `msg.sender`.
+- **Nullifiers:** a single registry trie is the proposed pilot shape,
+  with a UTXO-per-node structure documented as the contention fallback.
+- **Proofs:** the existing BLS12-381 prover may be reusable, but a
+  Plutus verifier prototype must prove transcript compatibility and
+  execution-budget feasibility before the profile is written.
+- **Delivery:** nothing is implemented; the build order starts with that
+  verifier prototype and ends with an audited preprod pilot.
+
+Readers evaluating the architecture should start with
+[nullifier uniqueness](#nullifier-uniqueness-is-the-hard-problem),
+[the proof-system choice](#bls12-381-the-third-binding-adds-no-fourth-curve), and
+[deployment identity and settlement](#deployment-identity-settlement-and-collateral).
+Implementers should start with [Build order](#build-order) and
+[Open profile questions](#open-profile-questions).
 
 ## Where the notary boundary ends
 
@@ -258,7 +284,7 @@ in [`onym-contracts`](https://github.com/onymchat/onym-contracts)
 already generate TurboPLONK proofs over BLS12-381 for the notary's
 group statements, and a Cardano charity binding reuses that backend
 instead of waiting on the BN254 backend the
-[BNB plan](charity-bnb.md) and the
+[merged BNB specification](charity-bnb.md) and the
 [notary EVM plan](notary-bnb.md) both still need. What is *not*
 shared is the verifier. Soroban verifies through host functions
 against a Rust contract; Cardano needs the verifier written on top of
@@ -292,7 +318,7 @@ byte-for-byte in-script. A transcript over a circuit-native hash
 would be fatal here: Plutus offers SHA-2, SHA-3, blake2b, keccak-256,
 and RIPEMD-160 as builtins, and **no Poseidon**, so a Poseidon
 transcript would have to be written out in Plutus field arithmetic —
-an order-of-magnitude problem no MSM optimisation touches.
+an order-of-magnitude problem no MSM optimization touches.
 
 It is not Poseidon. The notary's transcript
 (`plonk/prover/src/circuit/plonk/transcript.rs` in
@@ -402,7 +428,7 @@ appears in no datum or redeemer at all. None of these fixtures exist;
 
 What a Cardano explorer adversary sees differs from the BSC row of
 the [adversary's view](charity-adversary.md) in four ways, and not
-uniformly in Cardano's favour:
+uniformly in Cardano's favor:
 
 - Datums are **more** legible than EVM storage. Explorers decode and
   render inline datums as a matter of course; reading an EVM
@@ -454,7 +480,7 @@ sits in the second phase of the Dijkstra roadmap, targeting Q2 2027
 behind Linear Leios in Q4 2026, and those dates are published as
 estimates. A declared depth threshold is therefore the answer for
 this binding's entire plausible build window, not a placeholder, and
-Peras is a possible later optimisation rather than a dependency —
+Peras is a possible later optimization rather than a dependency —
 nothing in this binding waits for it.
 
 A rolled-back anchor is a `conflicting_state` **security event, not a
@@ -503,7 +529,7 @@ relayer's signed, byte-served operator manifest —
 [live and CI-signed today](notary-stellar.md#the-live-operator-manifest)
 on the Stellar notary side — gains a Cardano charity profile entry,
 the deployments it administers, and network entries binding the
-ed25519 operator identity to the Cardano payment address that pays
+Ed25519 operator identity to the Cardano payment address that pays
 fees, the collateral policy, and the admin key hash the validators
 require as a signer. **A deployment absent from the manifest does not
 exist for clients**, whatever is on the chain.

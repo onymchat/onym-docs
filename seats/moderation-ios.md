@@ -5,6 +5,9 @@ running history: Apple DeviceCheck holds the two bits, an `apple/`
 backend is the only writer, and an `OnymModeration` client package
 validates every verdict before it ever touches a screen.
 
+**Status:** Running alpha implementation with known recovery and
+cross-implementation conformance limitations.
+
 **Profile:** [`moderation/Moderation-DeviceCheck.md`](https://github.com/onymchat/onym-system/blob/main/moderation/Moderation-DeviceCheck.md)
 (implements the [abstract moderation contract](moderation.md))
 **Code:** [`onym-moderation/apple`](https://github.com/onymchat/onym-moderation/tree/main/apple) (Rust backend)

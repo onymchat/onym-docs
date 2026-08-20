@@ -9,6 +9,9 @@ a reference implementation, merged client packages, and a live
 provider at `discovery.onym.app`; it is what the release assets are
 migrating onto.
 
+**Status:** Running transition. The signed provider and client packages
+exist, while shipping clients still prefer the legacy unsigned assets.
+
 **Profile:** [`discovery/Discovery-Static-Ed25519.md`](https://github.com/onymchat/onym-system/blob/main/discovery/Discovery-Static-Ed25519.md)
 (merged in [PR #28](https://github.com/onymchat/onym-system/pull/28))
 — implements the abstract [Discovery](discovery.md) contract. The

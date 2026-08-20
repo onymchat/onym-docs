@@ -1,7 +1,11 @@
 # Deployment
 
-[`onym-infra`](https://github.com/onymchat/onym-infra) brings every
-server-side seat up on one DigitalOcean droplet via Docker Compose.
+[`onym-infra`](https://github.com/onymchat/onym-infra) brings the
+reference Courier, Stellar Notary, and iOS Moderation services up on one
+DigitalOcean droplet via Docker Compose. This page covers the services
+in the table below. The signed Discovery publisher is deployed by its
+own workflow, as described later, and the live Android Moderation
+backend's deployment is not documented in this repository.
 
 | Service | Host | Seat |
 |---|---|---|
@@ -149,17 +153,21 @@ directly — the signed [discovery](seats/discovery-static-ed25519.md)
 provider is published by `onym-discovery`'s own manual deploy workflow
 ([#4](https://github.com/onymchat/onym-discovery/pull/4), merged; the
 genesis publish has run and the live catalog is at sequence 1). The
-`workflow_dispatch` `deploy.yml` builds the reference CLI, signs and
-chains the snapshot onto the previously **published** one (a genesis
-publish is an explicit input, not a guess), verifies everything exactly
-as a client would before a byte leaves the runner, rsyncs the static
-tree to `/var/www/discovery` on the **same droplet**, idempotently
-installs a Caddy vhost for it, and only then upserts the grey-cloud
-DNS record — so a mid-run failure never leaves a public name pointing
-at a half-configured host. Signing seeds (`DISCOVERY_OPERATOR_SEED`
-and the courier/blossom seat seeds) live as Actions secrets, with a
-`skip_signing` path for operators who sign locally instead; the job
-runs in a `production` environment gated by required reviewers.
+`workflow_dispatch` `deploy.yml` builds the reference CLI, then signs
+and chains the snapshot onto the previously **published** one. A genesis
+publish is an explicit input, not a guess.
+
+Before a byte leaves the runner, the workflow verifies everything
+exactly as a client would. It then rsyncs the static tree to
+`/var/www/discovery` on the **same droplet**, idempotently installs a
+Caddy vhost, and only then upserts the grey-cloud DNS record. A mid-run
+failure therefore never leaves a public name pointing at a
+half-configured host.
+
+Signing seeds (`DISCOVERY_OPERATOR_SEED` and the courier/Blossom seat
+seeds) live as Actions secrets, with a `skip_signing` path for operators
+who sign locally instead. The job runs in a `production` environment
+gated by required reviewers.
 
 Two operational couplings with this repository's deploy:
 

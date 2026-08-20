@@ -6,6 +6,9 @@ off-the-shelf servers under pinned configuration — there is no
 Onym-written courier, and replaceability is the point, so the
 interesting code is entirely on the client side.
 
+**Status:** Running alpha implementation with known interoperability,
+verification, payment, and replication gaps.
+
 **Profiles:** [`message/UI-Message-Nostr.md`](https://github.com/onymchat/onym-system/blob/main/message/UI-Message-Nostr.md)
 (implements [`message/UI-Message.md`](https://github.com/onymchat/onym-system/blob/main/message/UI-Message.md))
 · [`blob/UI-Blob-Blossom.md`](https://github.com/onymchat/onym-system/blob/main/blob/UI-Blob-Blossom.md)

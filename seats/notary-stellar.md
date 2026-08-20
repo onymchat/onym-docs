@@ -6,6 +6,9 @@ over BLS12-381, verified on-chain by Soroban host functions, submitted
 through a relayer that pays the fees so your wallet doesn't have to
 exist.
 
+**Status:** Running alpha implementation on Stellar testnet; not
+production-audited.
+
 **Profile:** [`notary/UI-Notary-Stellar.md`](https://github.com/onymchat/onym-system/blob/main/notary/UI-Notary-Stellar.md)
 (implements the [abstract notary contract](notary.md))
 **Code:** [`onym-contracts`](https://github.com/onymchat/onym-contracts) (on-chain)
