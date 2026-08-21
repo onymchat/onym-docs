@@ -14,8 +14,10 @@ so would also let it read the archive.
 **Contract:** [`backup/UI-Backup.md`](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup.md)
 — the technology-free boundary this page describes.
 **Implementations:** [Object-HTTP](backup-object-http.md) — the
-first profile, and so far the only one, merged in `onym-system`. No
-backup code exists in any Onym repository; both are merged drafts.
+first profile, and so far the only one. An operator runs it at
+`backup.onym.app`, and both clients enrol against it, back up, and
+restore. What has never run is the paid half: nothing issues the
+credential it would check.
 
 This page stays deliberately free of any one storage technology — so
 does the contract. A concrete implementation may use object storage, a
@@ -154,8 +156,14 @@ and neither does withholding export until arrears are paid.
 
 - **[Object-HTTP](backup-object-http.md)** — the merged implementation
   profile: object storage over HTTPS, with the wire mapping, sealing
-  suite, and payment refusal fully pinned. The design is settled; the
-  code does not exist.
+  suite, and payment refusal fully pinned. It now has code on both
+  sides. The operator is
+  [`onym-backup`](https://github.com/onymchat/onym-backup), running at
+  `backup.onym.app` in free mode; the sealing, enrolment, upload and
+  restore paths live in `onym-ios` and `onym-android`. What is still
+  only specified is the paid half — no broker issues the credential the
+  operator would check — and the conformance fixtures that would show
+  the two sides agree rather than each agreeing with itself.
 
 The abstract contract itself names what any profile has to settle
 before it's executable at all: digest suite, sealing and key

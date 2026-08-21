@@ -1,9 +1,11 @@
 # Backup — Object-HTTP
 
-*Seat implementation page, draft 0.1 — 19 August 2026.*
+*Seat implementation page, draft 0.2 — 21 August 2026.*
 
-**Status:** Specification merged; code not implemented. See
-[Honest status](#honest-status).
+**Status:** Running free-mode. A person can enrol, back up, and restore
+onto a second device from their recovery phrase alone. The paid path is
+written but has never met a credential it did not also mint, and the
+conformance fixtures are unwritten. See [Honest status](#honest-status).
 
 **Profile:** [`backup/UI-Backup-Object-HTTP.md`](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup-Object-HTTP.md)
 — merged in `onym-system`. It implements the abstract
@@ -13,7 +15,12 @@ the person's own recovery phrase, addresses it by a digest over the
 sealed bytes, and hands an operator opaque chunks over HTTPS. The
 operator authenticates a public key, counts bytes, and can do nothing
 else with what it holds.
-**Code:** none.
+**Operator:** [`onym-backup`](https://github.com/onymchat/onym-backup)
+· **Live:** `https://backup.onym.app` (free mode — no entitlement
+issuers declared, so it never returns `402`)
+· **Client code:** `onym-ios`, `onym-android`
+· **Listed in:** the `onym-services` discovery catalog, so a client
+finds it the same way it finds every other seat.
 
 This page summarizes what the profile pins, so a reader can judge the
 design without the full normative text. Every suite, header, and error
@@ -132,10 +139,32 @@ operator being left.
 
 ## Honest status
 
-- **Nothing on this page runs.** No conforming adapter, no conforming
-  operator, no fixture suite. The
-  [profile](https://github.com/onymchat/onym-system/blob/main/backup/UI-Backup-Object-HTTP.md)
-  is merged — a specification, not code.
+- **The paid path has never met a real credential.** Nothing issues a
+  `SeatEntitlement` — no broker exists in any Onym repository — so
+  §10's refusal, purchase, lapse, grace, and revocation behaviour is
+  exercised only against credentials the tests mint themselves. The
+  deployed operator declares no entitlement issuers and therefore never
+  returns `402`, which is the self-hosting path the profile requires
+  and not a workaround. Until a broker exists, "the paid path works" is
+  a claim about code that has never been paid.
+- **The conformance fixtures are still unwritten.** §18 lists what an
+  implementation must test; the operator and both clients test
+  themselves against their own understanding, which §19 explicitly says
+  is not conformance. Two divergences found by hand during the first
+  deployment argue the fixtures would earn their keep, because both
+  fail silently: the profile's `offers` example is an array of strings
+  while both clients parse objects, and the two clients rendered the
+  same derived identity as upper- and lower-case hex, which would have
+  made a cross-platform restore land every row under an owner the
+  device does not have.
+- **The operator holds the only copy.** Sealed snapshots live on one
+  block volume and nothing backs it up. Acceptable while the holders
+  are testers; not acceptable for anyone else, and it is an operational
+  gap rather than a profile one.
+- **A round trip loses an invitation's status.** The archive format
+  declares invitation status at a fixed default rather than carrying
+  it, so a restore cannot bring back an accepted invitation onto a
+  device that does not already hold one. Closing it is a format change.
 - **No incremental upload.** The abstract contract names a scheme that
   stays verifiable against a whole-snapshot reference without leaking a
   change map to the operator as unsolved design work, and this profile
