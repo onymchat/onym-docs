@@ -263,5 +263,10 @@ binding's own testnet pilot.
 - [Cardano](charity-cardano.md) — the eUTXO sibling, which reaches
   the same obligations without `msg.sender`, mutable mappings, or
   typed revert selectors.
+- [Solana](charity-solana.md) — the sibling that shares this
+  binding's **curve** but not its proof system: BN254 Groth16 through
+  native syscalls, with a per-circuit trusted setup this binding's
+  universal SRS does not need, and a separate prover backend as a
+  result.
 - [Notary — BNB Chain](notary-bnb.md) — the merged EVM profile whose
   hardening rules the charity profile restates.

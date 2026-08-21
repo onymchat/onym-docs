@@ -152,6 +152,9 @@ Everything below is unbuilt; the order is the dependency chain:
 - [Cardano](charity-cardano.md) — the third binding, sharing this
   plan's curve, prover, and unbuilt circuits; with a shared curve,
   separation between the two rests on the statement tag alone.
+- [Solana](charity-solana.md) — the fourth binding, sharing neither
+  this plan's curve nor its proof system, and the only one that
+  proposes to settle value on the ledger it notarizes.
 - [The adversary's view](charity-adversary.md) — what a public trail
   exposes; most rows apply to Stellar with a smaller explorer
   ecosystem.

@@ -12,9 +12,17 @@ states four deltas — decoded inline datums, per-campaign
 nullifier-token pages, a persistent collateral pool, and no event log
 at all — and they stay on that page rather than becoming rows here
 because they follow from a ledger model this page's row structure
-assumes away. They move here when that binding has a profile to
-analyze; the inferences below are the ones that hold across all
-three.*
+assumes away. The
+[Solana plan](charity-solana.md#every-surface-that-can-carry-bytes)
+states three of its own — indexed program logs, a first-class fee
+payer on every claim, and, if that binding takes its proposed
+on-chain settlement, a follow-the-money view no sibling offers — and
+its
+[settlement section](charity-solana.md#settlement-is-where-this-binding-gets-hard)
+is a threat model this page's structure does not yet cover, because
+no other binding puts a payout address on the ledger at all. Both
+move here when those bindings have profiles to analyze; the
+inferences below are the ones that hold across all four.*
 
 The charity trail puts commitments, nullifiers, and status changes on
 a public, heavily indexed chain on purpose — that is what makes the
