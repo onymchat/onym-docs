@@ -163,6 +163,16 @@ operator being left.
   same derived identity as upper- and lower-case hex, which would have
   made a cross-platform restore land every row under an owner the
   device does not have.
+- **The whole trust chain is the signed catalog, with no second
+  opinion.** Backup has no release asset and no legacy list, so a
+  client reaches an operator through the signed catalog or not at all.
+  That makes the client-side gaps in
+  [Discovery](discovery-static-ed25519.md) load-bearing here in a way
+  they are not elsewhere: duplicate-key rejection, the detached-`.sig`
+  verify path, equivocation and source-conflict detection, expired
+  manifests and the §6 continuity walk are implemented in the reference
+  CLI and not yet in the client packages. For every other seat a
+  legacy path cushions that; for this one it is the only path.
 - **The operator holds the only copy.** Sealed snapshots live on one
   block volume and nothing backs it up. Acceptable while the holders
   are testers; not acceptable for anyone else, and it is an operational

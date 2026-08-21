@@ -2,15 +2,24 @@
 
 The only implementation profile that exists today, merged with running
 reference code — and, right now, two realities that coexist. The
-**operational path**, what every shipping client actually reads today,
-is a handful of unsigned GitHub release assets, documented first
-below. The **signed-catalog path** is this merged profile itself, with
-a reference implementation, merged client packages, and a live
-provider at `discovery.onym.app`; it is what the release assets are
-migrating onto.
+**operational path** for every seat that has one is a handful of
+unsigned GitHub release assets, documented first below — with one
+exception, described in the next paragraph. The **signed-catalog
+path** is this merged profile itself, with a reference implementation,
+merged client packages, and a live provider at `discovery.onym.app`;
+it is what the release assets are migrating onto.
+
+[Backup](backup-object-http.md) is the exception, and the signed
+catalog's first production consumer: it shipped after this profile, so
+it has no release asset to fall back on and no legacy list to prefer. A
+client finds a backup operator through the signed catalog or not at
+all. That makes the client-side gaps below load-bearing for that one
+seat in a way they are not for the others.
 
 **Status:** Running transition. The signed provider and client packages
-exist, while shipping clients still prefer the legacy unsigned assets.
+exist, shipping clients still prefer the legacy unsigned assets for
+every seat that has them, and one seat — backup — already depends on
+the signed path alone.
 
 **Profile:** [`discovery/Discovery-Static-Ed25519.md`](https://github.com/onymchat/onym-system/blob/main/discovery/Discovery-Static-Ed25519.md)
 (merged in [PR #28](https://github.com/onymchat/onym-system/pull/28))
@@ -189,10 +198,12 @@ The profile's own gaps section is candid, and this page will not
 outrun it:
 
 - **The release assets have not migrated.** `discovery.onym.app` is
-  live and serves a signed catalog, but the shipping clients still
-  read the release assets above as their operational path; migrating
-  them onto the signed catalogs is explicitly listed as remaining
-  work.
+  live and serves a signed catalog, but for every seat that has a
+  release asset the shipping clients still read it as their operational
+  path; migrating them onto the signed catalogs is explicitly listed as
+  remaining work. Backup is the exception and has no asset to migrate —
+  which means the client-side gaps in the next bullet are, for that
+  seat, the entire trust chain rather than a second opinion.
 - **Some checks live only in the reference CLI.** Duplicate-key
   rejection, the detached-`.sig` verify path, and cross-catalog
   equivocation / source-conflict detection are implemented and

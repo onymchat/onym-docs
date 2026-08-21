@@ -3,9 +3,9 @@
 [`onym-infra`](https://github.com/onymchat/onym-infra) brings the
 reference Courier, Stellar Notary, iOS Moderation, and Backup services
 up on one DigitalOcean droplet via Docker Compose. This page covers
-the services in the table below. The signed Discovery publisher is deployed by its
-own workflow, as described later, and the live Android Moderation
-backend's deployment is not documented in this repository.
+the services in the table below. The signed Discovery publisher is
+deployed by its own workflow, as described later, and the live Android
+Moderation backend's deployment is not documented in this repository.
 
 | Service | Host | Seat |
 |---|---|---|
@@ -29,10 +29,12 @@ read, and the one whose disk is a hazard to everything else. Its sealed
 snapshots sit on a **separate block volume**, not the droplet's root
 filesystem: they are the only thing on this box measured in gigabytes,
 and a full root disk would stop the authority recording a verdict and
-the relay accepting an event. The deploy refuses to run if that volume
-is not mounted and prepared, and the container refuses to start without
-a sentinel file inside it — so a reboot where the mount does not return
-fails loudly instead of quietly writing snapshots to the root disk.
+the relay accepting an event. The deploy refuses to *continue* if that volume
+is not mounted and prepared — it creates the droplet first, which is
+what makes the two-run sequence below work — and the container refuses
+to start without a sentinel file inside it — so a reboot where the
+mount does not return fails loudly instead of quietly writing snapshots
+to the root disk.
 
 The one thing that genuinely must stay private is the triage model
 container, if enabled: case evidence was disclosed for adjudication, and
@@ -62,6 +64,16 @@ the workflow then provisions against that box, and the second deploy
 completes. On a box that already has its volume, one run is enough and
 the gate is a no-op.
 
+**A running operator is not yet a reachable one.** Backup has no
+release asset, so a client finds it through the signed catalog or not
+at all — see [Discovery provider](#discovery-provider) below. Until the
+operator's manifest is reviewed, pinned into `onym-services` and
+published, the seat exists and no client can see it. The entry pins the
+sha256 of the bytes the operator serves, so **any** later change to
+what the manifest carries — limits, offers, issuers, public URL —
+invalidates it and needs re-reviewing and re-publishing. Deploys and
+publishes are not independent operations.
+
 Provisioning is idempotent and safe to re-run. It creates and attaches
 the volume, mounts it, writes the sentinel files the container checks,
 and chowns them to the unprivileged uid the operator runs as. It never
@@ -88,8 +100,11 @@ because cloud-init runs at creation only.
 Two traps:
 
 - The swapfile is written by cloud-init, which runs only at droplet
-  **creation**. Five Rust builds share the box, and the 2 GB swapfile is
-  what makes them fit; adding swap later is a manual `ssh` job.
+  **creation**. Five Rust builds share the box — relayer, both
+  moderation interfaces, the authority, and now backup — and the 2 GB
+  swapfile is what makes them fit; adding swap later is a manual `ssh`
+  job. (This trap said "three" until backup arrived; it had already
+  missed the Android interface.)
 - The Cloudflare records must stay grey-cloud. Proxying breaks Caddy's ACME
   challenge and the Nostr `wss://` connection.
 
@@ -172,7 +187,11 @@ produced; compare that against what the mandates carry.
 ## CI
 
 `.github/workflows/deploy.yml` runs the same script from a manual
-`workflow_dispatch`, writing all five env files from Secrets and Variables.
+`workflow_dispatch`, writing all five env files from Secrets and
+Variables. The two-run sequence above applies here too: on an
+environment with no volume yet, the first dispatch stops at the gate,
+`Provision backup volume` runs against the droplet it created, and a
+second dispatch completes.
 This is also the relayer's deployment path — `onym-relayer` releases now
 publish manifests only.
 
@@ -195,7 +214,8 @@ bytes.
 directly — the signed [discovery](seats/discovery-static-ed25519.md)
 provider is published by `onym-discovery`'s own manual deploy workflow
 ([#4](https://github.com/onymchat/onym-discovery/pull/4), merged; the
-genesis publish has run and the live catalog is at sequence 1). The
+genesis publish has run; the live catalog is at sequence 4 and lists
+five seats). The
 `workflow_dispatch` `deploy.yml` builds the reference CLI, then signs
 and chains the snapshot onto the previously **published** one. A genesis
 publish is an explicit input, not a guess.
@@ -235,7 +255,18 @@ docker compose logs -f authority
 ```
 
 Both moderation services answer `GET /health`; `deploy.sh` checks for 200
-at the end of a run.
+at the end of a run. So does backup, and deploy additionally checks its
+`/manifest.json` and `/manifest.json.sig`, because clients pin those
+bytes and a manifest that stops resolving takes the seat out of reach.
+
+Backup is the one service here with a startup precondition, so it is
+the one whose failure looks like a loop rather than an error: if the
+block volume did not come back after a reboot, `docker compose ps`
+shows the container restarting, and `docker compose logs backup` prints
+its refusal to write sealed snapshots to the root filesystem. That is
+the sentinel check working. Re-mount `/mnt/onym-backup` — the fstab
+entry uses `nofail`, so the box boots without it — and the container
+settles on its next restart.
 
 The human moderation queue is at `https://$AUTHORITY_HOST/admin`, behind
 `AUTHORITY_ADMIN_TOKEN`. The authority refuses to start without this human
