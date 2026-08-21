@@ -20,8 +20,13 @@ else with what it holds.
 · **Live:** `https://backup.onym.app` (free mode — no entitlement
 issuers declared, so it never returns `402`)
 · **Client code:** `onym-ios`, `onym-android`
-· **Listed in:** the `onym-services` discovery catalog, so a client
-finds it the same way it finds every other seat.
+· **Listed in:** the `onym-services` discovery catalog — and, unlike
+every other seat, that is the *only* way a client finds it. The
+shipping clients still read release assets as their operational path
+for the seats that have them (see
+[Discovery](discovery-static-ed25519.md)); backup has no legacy list to
+fall back to, so a signed catalog entry and a pinned consent record are
+the whole of enrolment.
 
 This page summarizes what the profile pins, so a reader can judge the
 design without the full normative text. Every suite, header, and error

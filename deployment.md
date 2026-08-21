@@ -47,25 +47,29 @@ cp relayer.env.example relayer.env       # RELAYER_SECRET_KEY (required)
 cp moderation.env.example moderation.env # DeviceCheck key + ids, interface seed
 cp authority.env.example authority.env   # signing seed + admin token (required)
 cp backup.env.example backup.env         # BACKUP_SIGNING_SEED (required)
-./deploy/digitalocean/deploy.sh
-```
-
-**The backup volume comes first, and `deploy.sh` will not do it for
-you.** It refuses to run until `/mnt/onym-backup` is a mounted, prepared
-volume, so on a box that has never had one the first deploy stops before
-it builds anything:
-
-```sh
+./deploy/digitalocean/deploy.sh          # creates the droplet, then stops
+                                         # at the backup volume gate
 gh workflow run "Provision backup volume" --repo onymchat/onym-infra
+./deploy/digitalocean/deploy.sh          # this one goes all the way
 ```
 
-Idempotent, and safe to re-run. It creates and attaches the volume,
-mounts it, writes the sentinel files the container checks, and chowns
-them to the unprivileged uid the operator runs as. It never runs `mkfs`
-on a volume that already exists — the only formatting is at creation,
-when the volume is definitionally empty — because a provisioning script
-that can reformat a populated volume will eventually delete the only
-copy of someone's backup on a re-run that looked routine.
+**Two runs on a genuinely fresh environment, and the order is forced
+rather than clumsy.** `deploy.sh` refuses to continue until
+`/mnt/onym-backup` is a mounted, prepared volume; the provisioning
+workflow attaches a volume, which needs a droplet to attach it to. So
+the first deploy exists to create the droplet — it stops at the gate —
+the workflow then provisions against that box, and the second deploy
+completes. On a box that already has its volume, one run is enough and
+the gate is a no-op.
+
+Provisioning is idempotent and safe to re-run. It creates and attaches
+the volume, mounts it, writes the sentinel files the container checks,
+and chowns them to the unprivileged uid the operator runs as. It never
+runs `mkfs` on a volume that already exists — the only formatting is at
+creation, when the volume is definitionally empty — because a
+provisioning script that can reformat a populated volume will eventually
+delete the only copy of someone's backup on a re-run that looked
+routine.
 
 `BACKUP_SIGNING_SEED` is not like the other seeds. Clients pin the
 public key derived from it, so regenerating it makes the operator a
@@ -74,13 +78,18 @@ Generate it once and keep it somewhere you would keep a private key.
 
 The script creates or adopts an `s-2vcpu-4gb` droplet by name, adds a 2 GB
 swapfile, upserts **DNS-only** Cloudflare A records, syncs and brings the
-stack up. Re-runs update the box.
+stack up. Re-runs update the box — but **only the stack, never the
+droplet's size**. An existing droplet is adopted by name and never
+resized, so changing `DO_DROPLET_SIZE` moves what a *new* box would be
+created as and nothing else. Growing a running one is a `doctl` resize
+with a power-off; the cloud-init swapfile is not rewritten by it,
+because cloud-init runs at creation only.
 
 Two traps:
 
 - The swapfile is written by cloud-init, which runs only at droplet
-  **creation**. Five Rust builds share the box; adding swap later is a
-  manual `ssh` job.
+  **creation**. Five Rust builds share the box, and the 2 GB swapfile is
+  what makes them fit; adding swap later is a manual `ssh` job.
 - The Cloudflare records must stay grey-cloud. Proxying breaks Caddy's ACME
   challenge and the Nostr `wss://` connection.
 
@@ -163,7 +172,7 @@ produced; compare that against what the mandates carry.
 ## CI
 
 `.github/workflows/deploy.yml` runs the same script from a manual
-`workflow_dispatch`, writing all four env files from Secrets and Variables.
+`workflow_dispatch`, writing all five env files from Secrets and Variables.
 This is also the relayer's deployment path — `onym-relayer` releases now
 publish manifests only.
 

@@ -16,9 +16,8 @@ so would also let it read the archive.
 **Implementations:** [Object-HTTP](backup-object-http.md) — the
 first profile, and so far the only one. An operator runs it at
 `backup.onym.app`, and both clients enrol against it, back up, and
-restore. What has never run is the paid half — nothing issues the
-credential it would check — and the conformance fixtures that would
-show the two sides agree rather than each agreeing with itself.
+restore. What has never run is the paid half: nothing issues the
+credential it would check.
 
 This page stays deliberately free of any one storage technology — so
 does the contract. A concrete implementation may use object storage, a
