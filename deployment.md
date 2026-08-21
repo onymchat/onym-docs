@@ -2,8 +2,8 @@
 
 [`onym-infra`](https://github.com/onymchat/onym-infra) brings the
 reference Courier, Stellar Notary, iOS Moderation, and Backup services
-up on one DigitalOcean droplet via Docker Compose. This page covers the services
-in the table below. The signed Discovery publisher is deployed by its
+up on one DigitalOcean droplet via Docker Compose. This page covers
+the services in the table below. The signed Discovery publisher is deployed by its
 own workflow, as described later, and the live Android Moderation
 backend's deployment is not documented in this repository.
 
@@ -46,18 +46,41 @@ cp .env.example .env                     # DO_API_KEY, CF_API_TOKEN, hosts, size
 cp relayer.env.example relayer.env       # RELAYER_SECRET_KEY (required)
 cp moderation.env.example moderation.env # DeviceCheck key + ids, interface seed
 cp authority.env.example authority.env   # signing seed + admin token (required)
+cp backup.env.example backup.env         # BACKUP_SIGNING_SEED (required)
 ./deploy/digitalocean/deploy.sh
 ```
 
-The script creates or adopts an `s-1vcpu-2gb` droplet by name, adds a 2 GB
+**The backup volume comes first, and `deploy.sh` will not do it for
+you.** It refuses to run until `/mnt/onym-backup` is a mounted, prepared
+volume, so on a box that has never had one the first deploy stops before
+it builds anything:
+
+```sh
+gh workflow run "Provision backup volume" --repo onymchat/onym-infra
+```
+
+Idempotent, and safe to re-run. It creates and attaches the volume,
+mounts it, writes the sentinel files the container checks, and chowns
+them to the unprivileged uid the operator runs as. It never runs `mkfs`
+on a volume that already exists — the only formatting is at creation,
+when the volume is definitionally empty — because a provisioning script
+that can reformat a populated volume will eventually delete the only
+copy of someone's backup on a re-run that looked routine.
+
+`BACKUP_SIGNING_SEED` is not like the other seeds. Clients pin the
+public key derived from it, so regenerating it makes the operator a
+different operator to everyone already enrolled, with no repair path.
+Generate it once and keep it somewhere you would keep a private key.
+
+The script creates or adopts an `s-2vcpu-4gb` droplet by name, adds a 2 GB
 swapfile, upserts **DNS-only** Cloudflare A records, syncs and brings the
 stack up. Re-runs update the box.
 
 Two traps:
 
 - The swapfile is written by cloud-init, which runs only at droplet
-  **creation**. Three Rust builds share 2 GB; adding swap later is a manual
-  `ssh` job.
+  **creation**. Five Rust builds share the box; adding swap later is a
+  manual `ssh` job.
 - The Cloudflare records must stay grey-cloud. Proxying breaks Caddy's ACME
   challenge and the Nostr `wss://` connection.
 

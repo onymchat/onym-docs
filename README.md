@@ -86,7 +86,7 @@ its own declared purpose and retention terms.
 
 Nothing here is production-grade: running components are alpha and
 unaudited, and several load-bearing pieces remain open work. As of
-20 August 2026, the shortest honest status map is:
+21 August 2026, the shortest honest status map is:
 
 | Seat | Most mature implementation | Status |
 |---|---|---|

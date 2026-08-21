@@ -192,6 +192,8 @@ operator being left.
 ## Next steps
 
 - [Backup](backup.md) — the abstract seat this implements.
+- [Deployment](../deployment.md) — how the reference operator is brought
+  up, including the block volume it refuses to start without.
 - [Identity](identity.md) — where the BIP-39 seed this profile derives
   every key from actually lives. Recovery trustee also has a hand in
   the access key's fate (§16.2 of the abstract contract), but no seat

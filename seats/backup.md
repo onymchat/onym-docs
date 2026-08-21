@@ -183,6 +183,8 @@ unusable.
   as a person when that secret is lost; no seat page exists yet for it.
 - [Object-HTTP](backup-object-http.md) — the one implementation profile
   that exists today.
+- [Deployment](../deployment.md) — where the reference operator runs,
+  and what its block volume needs before it will start.
 - [Courier](courier.md) — carries messages and blobs in motion; this
   seat is the device's own archive of what it already received, not a
   substitute route for either.
