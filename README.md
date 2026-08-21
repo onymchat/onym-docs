@@ -96,7 +96,7 @@ unaudited, and several load-bearing pieces remain open work. As of
 | [Notary](seats/notary.md) | Stellar/Soroban | Running on Stellar testnet; not production-audited |
 | [Moderation](seats/moderation.md) | DeviceCheck / device recall | iOS and Android services run; Android recovery and platform-access gaps remain |
 | [Backup](seats/backup.md) | Object-HTTP | Running in free mode; paid path unexercised, conformance fixtures unwritten |
-| [Charity](seats/charity.md) | BNB Chain | Specification merged; no code; Stellar and Cardano remain plans |
+| [Charity](seats/charity.md) | BNB Chain | Specification merged; no code; Stellar, Cardano, and Solana remain plans |
 
 Each seat page links to its implementation pages, where the status and
 limitations are described in full.

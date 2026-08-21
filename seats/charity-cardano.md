@@ -729,6 +729,9 @@ answer:
   with reasons.
 - [Stellar/Soroban](charity-stellar.md) — the sibling that shares
   this binding's curve, prover, and unbuilt circuits.
+- [Solana](charity-solana.md) — the fourth binding, which starts
+  where this one does not: with an external credential layer it
+  composes with, and with no reusable prover at all.
 - [Notary — Stellar](notary-stellar.md) — the running relayer and
   manifest infrastructure, and the BLS12-381 prover this binding
   reuses.
