@@ -86,7 +86,7 @@ its own declared purpose and retention terms.
 
 Nothing here is production-grade: running components are alpha and
 unaudited, and several load-bearing pieces remain open work. As of
-20 August 2026, the shortest honest status map is:
+21 August 2026, the shortest honest status map is:
 
 | Seat | Most mature implementation | Status |
 |---|---|---|
@@ -95,7 +95,7 @@ unaudited, and several load-bearing pieces remain open work. As of
 | [Courier](seats/courier.md) | Nostr/Blossom | Running; material receipt, verification, payment, and replication gaps |
 | [Notary](seats/notary.md) | Stellar/Soroban | Running on Stellar testnet; not production-audited |
 | [Moderation](seats/moderation.md) | DeviceCheck / device recall | iOS and Android services run; Android recovery and platform-access gaps remain |
-| [Backup](seats/backup.md) | Object-HTTP | Specification merged; no code |
+| [Backup](seats/backup.md) | Object-HTTP | Running in free mode; paid path unexercised, conformance fixtures unwritten |
 | [Charity](seats/charity.md) | BNB Chain | Specification merged; no code; Stellar and Cardano remain plans |
 
 Each seat page links to its implementation pages, where the status and

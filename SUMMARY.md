@@ -5,8 +5,8 @@
 
 ## Seats
 
-* [Backup (plan)](seats/backup.md)
-  * [Object-HTTP (spec)](seats/backup-object-http.md)
+* [Backup](seats/backup.md)
+  * [Object-HTTP implementation](seats/backup-object-http.md)
 * [Charity (plan)](seats/charity.md)
   * [Stellar/Soroban plan](seats/charity-stellar.md)
   * [BNB Chain (spec)](seats/charity-bnb.md)
