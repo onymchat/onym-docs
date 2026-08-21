@@ -32,8 +32,8 @@ the messenger-side application profile. Both are drafts.
 ([`UI-Charity-BNB.md`](https://github.com/onymchat/onym-system/blob/main/charity/UI-Charity-BNB.md)) ·
 [Cardano](charity-cardano.md) — a **plan**, its profile unwritten ·
 [Solana](charity-solana.md) — a **plan**, its profile unwritten, and
-the only one that proposes to settle money on the same ledger it
-notarizes. No charity code exists in any Onym repository, and no
+the only one that argues the on-chain settlement question now instead
+of deferring it. No charity code exists in any Onym repository, and no
 binding waits for another to deliver.
 
 This page stays deliberately free of any one blockchain, payment rail,
@@ -226,10 +226,10 @@ profiles, and four are planned:
   rebuilds: the Solana Attestation Service already carries the
   issuer, schema, policy, and expiry layer this seat's credentials
   need, and Groth16 **BN254** proofs verify through native syscalls.
-  Its profile document is unwritten. It is also the only binding that
-  proposes an on-chain **financial** binding beside the notary one —
-  which puts the beneficiary's payout address on a public ledger, and
-  the page argues that trade rather than assuming it.
+  Its profile document is unwritten. Every binding leaves room for a
+  later **financial** binding; this is the one that argues it now,
+  because putting the beneficiary's payout address on a public ledger
+  is a trade the page refuses to defer or assume.
 
 Two companion pages keep the seat honest at the system level:
 [the adversary's view](charity-adversary.md) states what a public

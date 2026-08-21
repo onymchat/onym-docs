@@ -29,9 +29,14 @@ credential and an eligibility policy. Composing with it, rather than
 re-deriving it, is the strongest argument for this binding.
 
 The second is that Solana is the first candidate where **settlement
-on the same ledger is worth considering at all**. The BNB, Stellar,
-and Cardano pages all refuse it under their profile IDs and leave
-money on regulated rails. Solana's combination of sub-cent fees,
+on the same ledger is worth designing now**. The
+[Stellar plan](charity-stellar.md) already names a USDC rail as a
+later, separate `financialBindings` profile, under the same refund
+and reversal precondition — so the option is not new, and this page
+does not claim to have invented it. What is new is that the economics
+make it worth resolving in a first profile rather than deferring, and
+that this is the first page to argue the trade rather than defer it
+too. Solana's combination of sub-cent fees,
 SPL-USDC, and a transaction-level fee payer makes a small
 disbursement economically sensible on-chain — and every consequence
 of taking that option lands on the beneficiary's privacy, which is
@@ -130,6 +135,21 @@ statement, not delegated to SAS. The cost is explicit: expiry becomes
 this profile's responsibility, needs its own circuit constraint, and
 needs a fixture proving an expired leaf cannot satisfy the predicate.
 
+The second cost of that empty row is larger, and must not hide behind
+the word *revocation*. Because nothing per-beneficiary exists
+on-chain to revoke, **there is no per-beneficiary revocation**.
+Removing a credential's authorized signers stops the tree being
+extended; every leaf already inside a posted root stays claimable,
+because a membership proof is proved against a root that does not
+un-publish. In-leaf expiry is therefore the *only* beneficiary-level
+invalidation this design has, which raises the stakes on the
+constraint above: an issuer that must withdraw one person's
+eligibility before it expires has to post a new root under a policy
+whose predicate excludes them, and the profile must state what that
+costs a campaign mid-flight. That is an accepted cost of §9.2's
+prohibition rather than an oversight — but it is a cost, and it
+belongs in the deployment's privacy disclosure, not in a footnote.
+
 The authority chain that results is worth writing out, because a
 membership proof is only ever as meaningful as the authority over the
 root it is proved against:
@@ -161,8 +181,8 @@ clients feel.
 
 | Gate | How it works | What it costs |
 |---|---|---|
-| **Immutable admin pubkey** parameterized into the campaign account at registration | The instruction asserts the admin signed | Matches the EVM sibling exactly: a client that pins the deployment pins who may write. Rotation is a new deployment. No revocation path |
-| **SAS credential lookup** — resolve the credential account and check the signer against its current authorized signers | The instruction reads the credential as an account and compares | Revocation works, which is the whole point of composing with SAS. But authority is now **mutable state outside the program**, so pinning the program no longer pins who may write; a client must resolve the credential too, and the manifest must declare which one |
+| **Admin pubkey fixed at registration**, stored in the campaign account | The instruction asserts that pubkey signed | Simple, and revocation-free — but weaker than it looks, and weaker than the EVM sibling. BNB's admin is `immutable` inside hashed bytecode, so pinning the deployment pins who may write; here the admin lives in **account state**, outside the program-data hash, so a client that pins the program has pinned nothing about it. Rotation is a new campaign registration, or an admin-change instruction if the profile allows one — not a new deployment. The client must read the account, and the profile must say whether that state may change at all |
+| **SAS credential lookup** — resolve the credential account and check the signer against its current authorized signers | The instruction reads the credential as an account and compares | Issuer-level revocation works — narrowly, and that is the point of composing with SAS: removing a signer stops *future* root extension. Authority is mutable state outside the program here too, resolved at call time, so the client must read the credential as well and the manifest must declare which one |
 
 The working answer is **both, at different layers**: the campaign's
 own administrative writes (registration, revision advance, status
@@ -250,9 +270,9 @@ a curve swap:
 
 - **The curve is shared with BNB, the backend is not.** A BN254
   Groth16 prover in the mobile Rust FFI is new work that no existing
-  or planned Onym binding shares. The repository's own history
-  records a Groth16 path that was dropped; reviving it is a decision,
-  not a reuse.
+  or planned Onym binding shares. `onym-contracts`' own history records a
+  Groth16 path that was dropped; reviving it is a decision, not a
+  reuse.
 - **Groth16 needs a per-circuit trusted setup.** PLONK's universal
   SRS does not carry over. Every eligibility predicate this binding
   ships requires its own ceremony, with published transcript,
@@ -300,7 +320,7 @@ widely used standard-library Poseidon is not byte-compatible with the
 syscall. A differential test against `sol_poseidon` is an acceptance
 criterion, not a nicety.
 
-## Atomicity is free; contention moves to the vault
+## Atomicity is free; contention is not
 
 Nullifier consumption and claim anchoring must happen with no window
 between the eligibility check and the consumption. One Solana
@@ -310,26 +330,41 @@ write the anchor — and an instruction either succeeds entirely or
 reverts entirely. The property the EVM sibling gets by doing both
 writes in one call, this gets the same way.
 
-Contention is more interesting. Claims touch disjoint accounts — the
+Contention is more interesting, and the tempting version of this
+paragraph is wrong. The claim-specific accounts are disjoint — the
 campaign account read-only, distinct nullifier accounts — so Sealevel
-schedules them concurrently, and campaign-wide disbursement does not
-funnel every claim through one writable account. That is a throughput
-property first; the privacy benefit is narrow but real, in that it
+schedules *those* concurrently. But every transaction has a **fee
+payer, and the fee payer is writable**; under the relayer model below
+one relayer key pays for every claim in a campaign and funds each
+nullifier account's rent, so a single-key relayer serialises claims
+on its own account against the per-account write budget a block
+allows. **Contention therefore exists in notary-only mode**, before
+any settlement rail is considered, and a page that located it only at
+the vault would be describing a different deployment than the one it
+proposes.
+
+The mitigation is key count, and each count shards only its own
+account: **multiple relayer fee-payer keys** shard fee-payer
+contention, and — if the settlement binding is taken — **multiple
+vault sub-accounts** shard vault contention, because every SPL-USDC
+payout debits its source token account and a single-vault campaign
+serialises on that one too. Two contended accounts, two independent
+shard counts, and throughput bounded by whichever is scarcer.
+Solana's contribution is that both are legible and shardable rather
+than implicit — and the profile requires them *measured* rather than
+asserted, because "shardable" is a design claim until a number
+exists.
+
+**Sealevel is not a privacy primitive.** The concurrency it does give
 removes a queue whose ordering would otherwise amplify timing
-correlation between claims. **Sealevel is not a privacy primitive**:
+correlation between claims, which is a narrow but real benefit;
 inclusion slots, signatures, and account accesses stay observable,
 and this binding's unlinkability rests on the credential and
-nullifier design, not on the scheduler.
-
-The residual is settlement, and it is honest to name it. Every
-SPL-USDC payout debits its source token account, so a campaign funded
-from a single vault serialises claims on that one writable account
-against the per-account write budget a block allows. The answer is
-that the bottleneck is legible and shardable — a campaign pool split
-across vault sub-accounts, and a relayer running multiple fee-payer
-keys, so throughput scales with vault count — and the profile
-requires it be *measured* rather than asserted, because "shardable"
-is a design claim until a number exists.
+nullifier design, not on the scheduler. A fee payer shared across
+every claim cuts the other way, and it is the EVM sibling's
+[single gas-paying submitter](charity-adversary.md#5-the-single-gas-paying-submitter)
+row with a second job — it pays *and* it is the account every claim
+contends on.
 
 ## Paying fees for someone who holds no SOL
 
@@ -365,9 +400,12 @@ is not resolved here.
 claim digest, the scoped nullifier, and a randomized, claim-scoped
 recipient commitment, and that the payout coordinate stays sealed to
 the named delivery provider. An SPL-USDC transfer in the same
-instruction as the claim anchor **publishes the destination token
+**transaction** as the claim anchor **publishes the destination token
 account in that transaction's account list**, permanently joined to
-the nullifier that retired the entitlement. The proof hid which leaf
+the nullifier that retired the entitlement. Splitting the payout into
+its own *instruction* changes nothing — the account list is
+transaction-scoped, so the two appear together either way — which is
+what the third option below is actually doing. The proof hid which leaf
 the claimant was; the settlement then publishes an address that
 receives the money, and every downstream movement of that balance is
 chain-analysable by anyone.
@@ -597,7 +635,8 @@ it gates none, which is the house position rather than a new claim:
    account layouts and their public fields, the two authorization
    gates, SAS credential and schema binding, deployment identity and
    the upgrade-authority rule, the error taxonomy, and the extended
-   negative-PII fixture set over all six surfaces above. The
+   negative-PII fixture set over the five surfaces this profile ID
+   governs. The
    proof half — public-input layout, proof encoding, requested
    compute limits — waits on step 1. `UI-Charity.md` §8.3 sets the
    bar and applies unchanged: until the document exists and passes
@@ -665,9 +704,10 @@ answer:
    versus a pinned signer set, and how a client verifies the mutable
    half without a second network round-trip it cannot afford.
 6. **Fee-payer concentration** — how many relayer keys, declared or
-   not, and whether their reuse across campaigns creates a
-   correlation surface the [adversary page](charity-adversary.md)
-   should carry as its own row.
+   not, and whether their reuse across campaigns widens the existing
+   [gas-paying-submitter row](charity-adversary.md#5-the-single-gas-paying-submitter)
+   enough to need its own. The count is also a throughput parameter,
+   so privacy and liveness pull on the same dial here.
 7. **Anchor batching** — open on BNB, open here, and sharper if
    settlement is on-chain, because batching then trades audit
    granularity against timing correlation on the money as well as on
