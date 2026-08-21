@@ -170,10 +170,12 @@ for out-of-band comparison:
 | `onym-authority` (moderation) | `fd:92:53:ed:1f:1e:35:7d` | `onym:key:bdec68a8440f36591dd822748f86fee3582794b3d20445b06953db6f266f3dca` |
 | `onym-courier` (transport.message) | `6b:14:cd:ea:7e:95:be:60` | `onym:key:92500a19c43193c8945aa91b94878b0c986f2c4da500de4c2caea29103aaa84f` |
 | `onym-blossom` (blob.storage) | `4a:e9:35:23:ef:49:b6:00` | `onym:key:e446f2b18e9f75e13397ebdff0f2e40610c9e745aa11308b04c8b607f7dea094` |
+| `onym-backup` (storage.backup) | `cf:29:e8:26:5c:d4:29:41` | `onym:key:d35a665d3a2126e3ede3b4fb2a591fed7904c5f837b7e86c7e81563a0078cb56` |
 
 A fingerprint is the first 8 bytes, colon-separated hex, of the
 SHA-256 of the key's 32 raw public-key bytes. Every value above was
-verified on **2026-08-15** against the manifests actually served at
+verified on **2026-08-15** — except `onym-backup`, added and verified
+on **2026-08-21** — against the manifests actually served at
 `https://discovery.onym.app/manifest.json`,
 `https://relayer.onym.app/manifest.json`, and the operators listed in
 `https://discovery.onym.app/catalogs/onym-services.json`, with the

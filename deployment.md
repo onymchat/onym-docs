@@ -1,8 +1,8 @@
 # Deployment
 
 [`onym-infra`](https://github.com/onymchat/onym-infra) brings the
-reference Courier, Stellar Notary, and iOS Moderation services up on one
-DigitalOcean droplet via Docker Compose. This page covers the services
+reference Courier, Stellar Notary, iOS Moderation, and Backup services
+up on one DigitalOcean droplet via Docker Compose. This page covers the services
 in the table below. The signed Discovery publisher is deployed by its
 own workflow, as described later, and the live Android Moderation
 backend's deployment is not documented in this repository.
@@ -15,6 +15,7 @@ backend's deployment is not documented in this repository.
 | relayer | `relayer.onym.app` | [notary — Stellar](seats/notary-stellar.md) |
 | moderation | `moderation.onym.app` | [moderation](seats/moderation.md) — enforcement |
 | authority | `authority.onym.app` | [moderation](seats/moderation.md) — judgment |
+| backup | `backup.onym.app` | [backup — Object-HTTP](seats/backup-object-http.md) |
 
 One box is a cost decision and nothing depends on it. The authority
 delivers verdicts to the interface's **public** hostname rather than over
@@ -22,6 +23,16 @@ the private network, so the day the interface moves to another operator
 that address points elsewhere and nothing else changes — and this
 deployment exercises the same TLS + token + signature path everyone else
 must use.
+
+The backup operator is the one service here that stores bytes it cannot
+read, and the one whose disk is a hazard to everything else. Its sealed
+snapshots sit on a **separate block volume**, not the droplet's root
+filesystem: they are the only thing on this box measured in gigabytes,
+and a full root disk would stop the authority recording a verdict and
+the relay accepting an event. The deploy refuses to run if that volume
+is not mounted and prepared, and the container refuses to start without
+a sentinel file inside it — so a reboot where the mount does not return
+fails loudly instead of quietly writing snapshots to the root disk.
 
 The one thing that genuinely must stay private is the triage model
 container, if enabled: case evidence was disclosed for adjudication, and

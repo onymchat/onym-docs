@@ -2,7 +2,7 @@
 
 *Seat implementation page, draft 0.2 — 21 August 2026.*
 
-**Status:** Running free-mode. A person can enrol, back up, and restore
+**Status:** Running in free mode. A person can enrol, back up, and restore
 onto a second device from their recovery phrase alone. The paid path is
 written but has never met a credential it did not also mint, and the
 conformance fixtures are unwritten. See [Honest status](#honest-status).
@@ -15,6 +15,7 @@ the person's own recovery phrase, addresses it by a digest over the
 sealed bytes, and hands an operator opaque chunks over HTTPS. The
 operator authenticates a public key, counts bytes, and can do nothing
 else with what it holds.
+
 **Operator:** [`onym-backup`](https://github.com/onymchat/onym-backup)
 · **Live:** `https://backup.onym.app` (free mode — no entitlement
 issuers declared, so it never returns `402`)

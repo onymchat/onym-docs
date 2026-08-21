@@ -95,7 +95,7 @@ unaudited, and several load-bearing pieces remain open work. As of
 | [Courier](seats/courier.md) | Nostr/Blossom | Running; material receipt, verification, payment, and replication gaps |
 | [Notary](seats/notary.md) | Stellar/Soroban | Running on Stellar testnet; not production-audited |
 | [Moderation](seats/moderation.md) | DeviceCheck / device recall | iOS and Android services run; Android recovery and platform-access gaps remain |
-| [Backup](seats/backup.md) | Object-HTTP | Operator running free-mode; clients enrol, back up, and restore; the paid path has never met a real credential and the conformance fixtures are unwritten |
+| [Backup](seats/backup.md) | Object-HTTP | Operator running free mode; clients back up and restore; paid path unexercised, conformance fixtures unwritten |
 | [Charity](seats/charity.md) | BNB Chain | Specification merged; no code; Stellar and Cardano remain plans |
 
 Each seat page links to its implementation pages, where the status and
