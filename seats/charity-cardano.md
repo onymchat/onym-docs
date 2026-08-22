@@ -1,6 +1,6 @@
 # Charity — Cardano
 
-*Seat implementation page, draft 0.1 — 17 August 2026.*
+*Seat implementation page, draft 0.2 — 22 August 2026.*
 
 **Status:** Plan; profile and code not implemented. See
 [Honest status](#honest-status).
@@ -27,11 +27,16 @@ tier remain conditional.
 
 This is a design and feasibility document.
 
-- **Boundary:** notary and eligibility only; validators would not hold or settle charitable funds.
-- **Authorization:** required signers parameterized into the script hash are the leading `msg.sender` replacement.
-- **Nullifiers:** a single registry trie is the proposed pilot; UTXO-per-node is the contention fallback.
-- **Proofs:** the BLS12-381 prover may be reusable; a Plutus prototype must prove transcript compatibility and budget feasibility first.
-- **Delivery:** nothing exists; work starts with the verifier prototype and ends with an audited preprod pilot.
+- **Boundary:** notary and eligibility only; validators would not hold or
+  settle charitable funds.
+- **Authorization:** required signers parameterized into the script hash are
+  the leading `msg.sender` replacement.
+- **Nullifiers:** a single registry trie is the proposed pilot; UTXO-per-node
+  is the contention fallback.
+- **Proofs:** the BLS12-381 prover may be reusable; a Plutus prototype must
+  first prove transcript compatibility and budget feasibility.
+- **Delivery:** nothing exists; work starts with the verifier prototype and
+  ends with an audited preprod pilot.
 
 Architecture review should start with
 [nullifier uniqueness](#nullifier-uniqueness-is-the-hard-problem),
@@ -75,10 +80,9 @@ signers, but no sender. Three candidate gates use those surfaces differently.
 | **Script parameterization alone** | Bake campaign scope and admin identity into parameters without a runtime signer check | Insufficient: parameters select the script, not the transaction builder |
 
 Beacon tokens remain available for state-thread identity, not authority.
-Required signers most closely match BNB's `immutable` bytecode admin. Both make
-the pinned hash commit to write authority. Both also prohibit key rotation, so
-the cost is shared. Rotation creates a new script hash, deployment identity,
-and manifest declaration.
+Required signers most closely match BNB's `immutable` bytecode admin: both pin a
+hash that commits to write authority, and both make key rotation a new
+deployment.
 
 Proof-authorized writes need no gate. `anchorAidClaim` is sender-agnostic by
 default because Cardano has no sender. Validity comes from the eligibility proof
@@ -86,14 +90,16 @@ and the validator's campaign state, matching the merged BNB profile.
 
 ## Nullifier uniqueness is the hard problem
 
-**Cardano does not enforce one mint per asset name.** A policy can mint the same
-policy-ID/asset-name pair again. A policy parameterized by a specific consumed
-UTXO is one-shot. Uniqueness is a property the minting policy must construct,
-and the minting transaction must consume that UTXO. This cannot enforce one
-token for each arbitrary nullifier because the nullifier is unknown when the
+**Cardano does not enforce one mint per asset name.** A policy can mint the
+same policy-ID/asset-name pair again. Uniqueness is a property a minting policy
+must *construct*. The standard construction parameterizes the policy by a
+specific UTXO that the minting transaction must consume, which is one-shot
+precisely because a UTXO can only be spent once. It does not generalise to one
+token per arbitrary nullifier value, because the nullifier is unknown when the
 policy is parameterized.
-A token can represent a spent nullifier; explicit on-chain state must prove it
-was previously unspent.
+
+So a nullifier token can *represent* a spent nullifier, but something on-chain
+must still prove the nullifier was not spent before.
 
 Claims read campaign status, revision, and policy as **reference inputs** under
 [CIP-31](https://cips.cardano.org/cip/CIP-0031). They never spend campaign state.
@@ -106,24 +112,18 @@ one campaign UTXO, making the nullifier comparison meaningless.
 | **Nullifier set as UTXOs** | Use a sorted linked list with one UTXO per node. Insert by spending the node covering the new value and producing replacements | Contention spreads with the set, though claims in the same gap still collide and require rebuild-and-resubmit. Every node locks min-UTXO permanently, so ADA grows linearly with all historical claims |
 | **Shard the registry** | Partition by a prefix of the already-public nullifier | Divides contention by shard count while multiplying min-UTXO floors. This leaks nothing new and is a mitigation, not a third shape |
 
-The registry's contention can become a liveness failure. Concurrent claimants
-collide, and sustaining throughput above one spend per block requires a party to
-chain transactions off-chain. The relayer then becomes both sequencer and
-censorship point. The UTXO-per-node alternative avoids a single ceiling but not
-collisions: two inserts in the same gap still conflict. Rebuild frequency
+Registry contention is a liveness failure, not a safety one: sustaining more
+than one spend per block requires someone to chain transactions off-chain, which
+is where the relayer acquires that role. The linked list's ADA floor is
+permanent because a nullifier set never shrinks, and its rebuild frequency
 depends on set density.
-
-Their ADA costs are mirror images. The registry locks a constant floor at any
-claim count. A linked list permanently locks min-UTXO for every node because a
-nullifier set may never shrink. Sharding multiplies the constant floor by its
-shard count.
 
 Two separate mechanisms are mandatory:
 
 - **Domain separation** requires a per-campaign minting policy. The profile must
-  require derivation from public campaign data only. Cardano asset names are at
-  most 32 bytes, already filled
-  by a 32-byte BLS12-381 scalar nullifier. Campaign and epoch cannot also fit,
+  require derivation from public campaign data only. Cardano asset names are
+  at most 32 bytes, already filled by a 32-byte BLS12-381 scalar nullifier.
+  Campaign and epoch cannot also fit,
   so the policy ID carries scope. Credential-linked parameters would turn the
   policy ID into the forbidden cross-campaign identifier.
 - **Uniqueness** uses a campaign- and epoch-scoped registry transition. Its
@@ -136,17 +136,17 @@ written. No deployment exists to measure concurrency, so the answer is
 conditional: **the single registry trie is the pilot shape**.
 
 One registry supports one claim per block. At mainnet's roughly twenty-second
-block time, that is about one hundred claims per hour. A first campaign serving
-tens of beneficiaries over a year would usually see claims hours or days apart,
-orders of magnitude below that ceiling. Collisions would be essentially absent
-at the average rate. The relevant threshold is burst size, especially at epoch
-rollover when every eligible claimant can act simultaneously.
+block time, that is on the order of a hundred claims an hour. A first campaign
+serving tens of beneficiaries over a year would see claims hours or days apart,
+orders of magnitude below that ceiling, colliding essentially never. The
+relevant threshold is burst size, especially at epoch rollover when every
+eligible claimant can act simultaneously.
 
 The profile must define a same-block arrival threshold at rollover. Above the
 capacity of one spend per block plus a bounded rebuild loop, the documented
-migration is UTXO-per-node. Migration creates a new deployment under the
-identity rules, not an in-place schema change. That operational cost exists
-before the pilot.
+migration is UTXO-per-node. Migration is a new deployment under this profile's
+identity rules, not an in-place schema change: a cost worth stating up front
+rather than discovering.
 
 ## Atomicity comes free, contention does not
 
@@ -172,8 +172,8 @@ the **van Rossem hard fork, protocol version 11**: Preview on 8 May 2026 and
 mainnet on 18 July 2026, one month before this page.
 
 The profile must carry two consequences. First, it must declare **PV11 or
-later**, not merely Plutus V3, beside network
-magic and script hash, including in manifest network entries. PV11 exposes
+later**, not merely Plutus V3, beside network magic and script hash,
+including in manifest network entries. PV11 exposes
 every builtin across Plutus V1, V2, and V3, so language version no longer
 identifies capabilities. Second, these builtins and their cost model are months
 old, not settled infrastructure. A prototype, not an assumption, must establish
@@ -198,9 +198,9 @@ BNB chose BN254 to obtain **toolchain-generated** Solidity verifiers, avoiding
 a bespoke audit of handwritten verification. It paid for a second curve,
 second setup, and bidirectional cross-curve rejection fixtures. Cardano reuses
 the curve but accepts BNB's rejected cost: a handwritten pairing verifier,
-without a mature
-generated-verifier toolchain, deciding claims on real aid. **That is the
-load-bearing cost of this binding.** Fixtures do not retire it; an audit does.
+without a mature generated-verifier toolchain, deciding claims on real aid.
+**That is the load-bearing cost of this binding.** Fixtures do not retire it;
+an audit does.
 
 Shared-curve prover reuse also depends on the **Fiat–Shamir transcript**. The
 verifier must reproduce it byte-for-byte. Plutus has SHA-2, SHA-3, blake2b,
@@ -226,10 +226,10 @@ Only the last lacks a builtin. Before PV11, naive Plutus MSM above 129 points
 could not fit in one transaction. After PV11, no order-of-magnitude blocker is
 known, but only measurement can show that the verifier fits.
 
-The profile must weigh three costly failure options: shrink the circuit; split verification
-across transactions using a partially verified state UTXO, **forfeiting
-single-transaction atomicity**; or change proof systems and lose the shared
-prover.
+The profile must weigh three costly failure options: shrink the circuit; split
+verification across transactions using a partially verified state UTXO,
+**forfeiting single-transaction atomicity**; or change proof systems and lose
+the shared prover.
 
 In a three-binding world, cross-curve rejection is not a pair. BN254 proofs must
 fail under both BLS12-381 profiles, and BLS12-381 proofs must fail under BNB.
@@ -247,7 +247,7 @@ it does not remove it. Ledger state can change between evaluation and inclusion,
 leaving contention as a normal class. Pre-flight evaluation operates on a
 snapshot, so it cannot guarantee that phase-2 failure never reaches the chain.
 
-| Class | Condition | Decision point | Client behaviour |
+| Class | Condition | Decision point | Client behavior |
 |---|---|---|---|
 | refresh-and-rebuild | Stale revision; epoch rollover; another claim consumed the covering node | Relayer resolves current state and evaluates before submission | Re-resolve, re-consent, rebuild the presentation, and resubmit. A new epoch derives a new nullifier. Contention is expected |
 | terminal scoped refusal | Nullifier already exists | Off-chain set read; on-chain transaction is unbuildable | Show the scoped refusal; never a person identifier or retry |
@@ -262,8 +262,8 @@ matching.
 The profile must disclose that this is strictly less verifiable than BNB. BNB
 clients derive retry classes from receipt selectors. Here the class is the
 relayer's claim about an unsubmitted transaction. Resulting state is
-independently verifiable; classification is
-not. The client-behaviour taxonomy survives, but its decision point moves
+independently verifiable; classification is not. The client-behavior taxonomy
+survives, but its decision point moves
 off-chain. The ledger model causes this cost.
 
 ## Every surface that can carry bytes
@@ -278,14 +278,14 @@ surfaces. The profile must extend `Charity.md` §15 item 7 across:
 | Redeemers | Proof bytes, indices, arguments | Same discipline; never the sealed recipient payload |
 | Asset names | 32-byte nullifier | Nothing else; policy ID carries scope |
 | Policy IDs / script parameters | Campaign scope, admin key hash | Public campaign data only |
-| Transaction metadata (CIP-20, CIP-25) | Arbitrary labelled structures | **Prohibited outright.** No auxiliary data |
+| Transaction metadata (CIP-20, CIP-25) | Arbitrary labeled structures | **Prohibited outright.** No auxiliary data |
 | Addresses | Payment and staking parts | Script addresses have no staking part unless declared |
 
 Negative fixtures plant names, IBANs, emails, and addresses in inputs. They grep
 every datum, redeemer, controlled-policy asset name, and the entire auxiliary
 data field. Passing requires zero hits, no auxiliary data, and no sealed
 recipient payload in any datum or redeemer. These fixtures do not exist;
-“requires” is the strongest true verb.
+"requires" is the strongest true verb.
 
 Cardano changes four explorer risks from the
 [adversary's view](charity-adversary.md):
@@ -405,8 +405,8 @@ Fixtures must attempt double satisfaction under the chosen rule.
   a prover, subject to build step 1's transcript check. That result could
   overturn reuse.
 - **One dependency is shared and unbuilt:** BLS12-381 charity eligibility
-  circuits shared with the [Stellar charity plan](charity-stellar.md), “built
-  once, not twice” as in BNB profile §15.
+  circuits shared with the [Stellar charity plan](charity-stellar.md), "built
+  once, not twice" as in BNB profile §15.
 - **Everything else is new and unshared:** Plutus verifier, validators, and the
   Cardano relayer backend.
 - `Charity.md` and `UI-Charity.md` are merged draft 0.1 documents from August
@@ -429,7 +429,7 @@ Cardano has its own dependency chain and gates no sibling.
    and recomputation; off-chain errors and CIP-57 declarations; settlement
    depth; and negative-PII fixtures over all six surfaces. Public inputs, proof
    encoding, atomicity, and proof errors wait for step 1. Under `UI-Charity.md`
-   §8.3, “uses Cardano” is only an implementation choice until the profile
+   §8.3, "uses Cardano" is only an implementation choice until the profile
    exists and passes conformance.
 3. **Circuits:** build `membership-set-v1` over BLS12-381 with setup and keys,
    shared with [Stellar](charity-stellar.md). Reuse is asymmetric: Cardano would
@@ -438,7 +438,7 @@ Cardano has its own dependency chain and gates no sibling.
    participate rather than inherit an unagreed layout.
 4. **Prover:** expected to require no build. The BLS12-381 backend ships in the
    notary mobile FFI, and Plutus can reproduce its keccak-256 transcript.
-   “Expected” remains until step 1 confirms byte equality. Cardano starts ahead
+   "Expected" remains until step 1 confirms byte equality. Cardano starts ahead
    of BNB, which still needs BN254.
 5. **Validators:** build charity validators and the verifier, deployed at a
    parameterized script hash without upgrades.
