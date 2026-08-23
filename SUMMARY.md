@@ -7,6 +7,7 @@
 
 * [Backup](seats/backup.md)
   * [Object-HTTP implementation](seats/backup-object-http.md)
+  * [Operator API and OpenAPI](seats/backup-api.md)
 * [Charity (plan)](seats/charity.md)
   * [Stellar/Soroban plan](seats/charity-stellar.md)
   * [BNB Chain (spec)](seats/charity-bnb.md)

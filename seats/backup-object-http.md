@@ -1,6 +1,6 @@
 # Backup — Object-HTTP
 
-*Seat implementation page, draft 0.2 — 21 August 2026.*
+*Seat implementation page, draft 0.3 — 23 August 2026.*
 
 **Status:** Running in free mode. A person can enrol, back up, and restore
 onto a second device from their recovery phrase alone. The paid path is
@@ -17,6 +17,7 @@ operator authenticates a public key, counts bytes, and can do nothing
 else with what it holds.
 
 **Operator:** [`onym-backup`](https://github.com/onymchat/onym-backup)
+· **Wire contract:** [operator API and OpenAPI](backup-api.md)
 · **Live:** `https://backup.onym.app` (free mode — no entitlement
 issuers declared, so it never returns `402`)
 · **Client code:** `onym-ios`, `onym-android`
@@ -28,11 +29,30 @@ for the seats that have them (see
 fall back to, so a signed catalog entry and a pinned consent record are
 the whole of enrolment.
 
-This page summarizes what the profile pins, so a reader can judge the
-design without the full normative text. Every suite, header, and error
-code named below is defined there — as is the required conformance
-fixture list, which specifies what an implementation must test, not a
-suite that runs today (see [Honest status](#honest-status)).
+This page explains the design and its trade-offs. It is not a parallel
+wire schema. For routes, headers, JSON fields, status codes, and error
+codes, [`onym-backup`](https://github.com/onymchat/onym-backup) is the source
+of truth and the [OpenAPI document](../openapi/onym-backup.yaml) is the
+derived integration reference. The abstract and Object-HTTP documents remain
+useful for intent; where an example in either differs from the implementation,
+it does not add a field or response to the operator. The required conformance
+fixture list specifies what an implementation must test, not a suite that runs
+today (see [Honest status](#honest-status)).
+
+## One wire contract, not three
+
+An adopter found independently conflicting shapes across the abstract
+contract, the Object-HTTP profile, and an earlier OpenAPI file. The
+[operator API page](backup-api.md) records the precedence rule and resolves
+the concrete conflicts. The two largest are worth stating here: export
+manifests carry receipt **paths**, not embedded receipt objects; and erasure
+is exactly `POST /v1/erasures` with `{operationId, scope}`, returning a receipt
+array directly.
+
+Abstract states such as `terms_regression` and `erasure_unconfirmed` remain UI
+or adapter conclusions. They are not operator error codes. This distinction
+lets the abstract boundary describe what a user must be told without
+inventing wire responses that the operator does not serve.
 
 ## What the mapping pins
 
@@ -158,8 +178,9 @@ operator being left.
   themselves against their own understanding, which §19 explicitly says
   is not conformance. Two divergences found by hand during the first
   deployment argue the fixtures would earn their keep, because both
-  fail silently: the profile's `offers` example is an array of strings
-  while both clients parse objects, and the two clients rendered the
+  fail silently: an older profile example represented manifest `offers` as
+  strings while the implementation and both clients use objects (the `402`
+  response still uses bare offer IDs by design), and the two clients rendered the
   same derived identity as upper- and lower-case hex, which would have
   made a cross-platform restore land every row under an owner the
   device does not have.
@@ -207,6 +228,8 @@ operator being left.
 ## Next steps
 
 - [Backup](backup.md) — the abstract seat this implements.
+- [Operator API and OpenAPI](backup-api.md) — the implementation-derived wire
+  contract and the resolution of known cross-document conflicts.
 - [Deployment](../deployment.md) — how the reference operator is brought
   up, including the block volume it refuses to start without.
 - [Identity](identity.md) — where the BIP-39 seed this profile derives
