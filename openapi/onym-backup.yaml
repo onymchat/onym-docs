@@ -1,0 +1,1343 @@
+openapi: 3.1.0
+info:
+  title: ONYM Backup Operator API
+  version: "1.0.0-implementation-3bf81fc"
+  description: |
+    OpenAPI description of the HTTP surface implemented by onym-backup at
+    commit 3bf81fc. The operator stores sealed snapshots and cannot decrypt
+    them.
+
+    Authenticated requests carry four proof-of-possession headers. The signed
+    payload consists of the length-prefixed UTF-8 bytes of, in order:
+    `onym-backup-v1`, uppercased method, exact request path, holder reference,
+    RFC3339 timestamp, nonce, and the raw SHA-256 digest of the body. Each
+    length is an unsigned 32-bit big-endian integer. Signatures use Ed25519 and
+    standard padded Base64.
+
+    Digest identifiers in JSON use `sha256:<64 lowercase hex>`. Digest path
+    parameters use only the bare 64-character lowercase hexadecimal part.
+  license:
+    name: Proprietary (ONYM)
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://localhost:8080
+    description: Default local port; production publishes its origin in manifest.json.
+tags:
+  - name: Discovery
+  - name: Entitlements
+  - name: Uploads
+  - name: Snapshots
+  - name: Erasure
+  - name: Export
+  - name: Operations
+
+paths:
+  /health:
+    get:
+      tags: [Discovery]
+      operationId: getHealth
+      summary: Get liveness and revocation-cache health
+      security: []
+      responses:
+        "200":
+          description: Operator health. The revocation field is null in free mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /manifest.json:
+    get:
+      tags: [Discovery]
+      operationId: getManifest
+      summary: Get the signed service manifest
+      security: []
+      responses:
+        "200":
+          description: Signed service manifest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceManifest"
+
+  /manifest.json.sig:
+    get:
+      tags: [Discovery]
+      operationId: getManifestSignature
+      summary: Get the detached signature over the exact manifest bytes
+      security: []
+      responses:
+        "200":
+          description: Standard padded Base64 Ed25519 signature as UTF-8 text
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/Base64Signature"
+
+  /profile.json:
+    get:
+      tags: [Discovery]
+      operationId: getImplementationProfile
+      summary: Get the backup implementation profile
+      security: []
+      responses:
+        "200":
+          description: Implementation profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImplementationProfile"
+
+  /terms/{termsFile}:
+    get:
+      tags: [Discovery]
+      operationId: getTermsFile
+      summary: Get a content-addressed terms document or its detached signature
+      description: |
+        `{termsFile}` is `<64 lowercase hex>.json` for a JSON document or
+        `<64 lowercase hex>.json.sig` for its standard-Base64 detached
+        signature. Historical terms are served when retained by the operator.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TermsFile"
+      responses:
+        "200":
+          description: Terms JSON or detached signature, selected by the filename suffix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TermsDocument"
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/Base64Signature"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/entitlements:
+    post:
+      tags: [Entitlements]
+      operationId: registerEntitlement
+      summary: Register a SeatEntitlement for the authenticated holder
+      description: |
+        Available even when the holder is unpaid or lapsed. A free operator
+        returns `400` because it declares no entitlement issuers.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterEntitlementRequest"
+      responses:
+        "200":
+          description: Entitlement registered idempotently
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterEntitlementResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/preflight:
+    post:
+      tags: [Uploads]
+      operationId: createOrResumeUpload
+      summary: Preflight a snapshot and create or resume an upload grant
+      description: |
+        A live grant for the same holder and digest is resumed before current
+        terms or payment are checked. A snapshot already retained returns a
+        completed outcome instead of an upload grant.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/OptionalEntitlement"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreflightRequest"
+      responses:
+        "200":
+          description: Upload grant, resumed grant, or already-retained outcome
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/UploadGrant"
+                  - $ref: "#/components/schemas/OutcomeEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/uploads/{uploadId}/chunks/{index}:
+    put:
+      tags: [Uploads]
+      operationId: putUploadChunk
+      summary: Store one transfer chunk
+      description: |
+        The chunk must have exactly the size implied by the grant. Re-sending
+        identical bytes is idempotent; re-sending different bytes for an
+        existing index returns `chunk_mismatch`. This operation is not payment
+        gated after a grant has been issued.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+        - $ref: "#/components/parameters/ChunkIndex"
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Chunk accepted; response body is empty
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/uploads/{uploadId}/commit:
+    post:
+      tags: [Uploads]
+      operationId: commitUpload
+      summary: Verify and retain a completed upload
+      description: |
+        Commit verifies chunk completeness, byte count, SHA-256 digest and
+        quota. An incomplete upload is retained for resumption and returns
+        `upload_incomplete` with inclusive missing-index ranges. This operation
+        is not payment gated after a grant has been issued.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/UploadId"
+      responses:
+        "200":
+          description: Snapshot retained
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutcomeEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/snapshots:
+    get:
+      tags: [Snapshots]
+      operationId: listSnapshots
+      summary: List this holder's retained, expired, and remembered erased snapshots
+      description: Listing is always available after authentication, including during lapse.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/OptionalEntitlement"
+      responses:
+        "200":
+          description: Snapshot records scoped to the authenticated holder
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SnapshotRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/snapshots/{digest}:
+    get:
+      tags: [Snapshots]
+      operationId: downloadSnapshot
+      summary: Stream a retained sealed snapshot
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/DigestPath"
+        - $ref: "#/components/parameters/OptionalEntitlement"
+      responses:
+        "200":
+          description: Exact sealed snapshot bytes
+          headers:
+            Content-Length:
+              schema:
+                type: integer
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "410":
+          $ref: "#/components/responses/Gone"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/erasures:
+    post:
+      tags: [Erasure]
+      operationId: eraseSnapshots
+      summary: Erase one snapshot or all snapshots and issue signed receipts
+      description: |
+        Returns one receipt per distinct terms document pinned by snapshots in
+        scope. The response is a JSON array directly, not an object envelope.
+        A retry may return the previously issued receipt set.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/OptionalEntitlement"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EraseRequest"
+      responses:
+        "200":
+          description: Signed erasure receipts
+          content:
+            application/json:
+              schema:
+                type: array
+                minItems: 1
+                items:
+                  $ref: "#/components/schemas/ErasureReceipt"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "410":
+          $ref: "#/components/responses/Gone"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/exports:
+    get:
+      tags: [Export]
+      operationId: getExportManifest
+      summary: Get the portable export manifest
+      description: Export never consults entitlement state.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      responses:
+        "200":
+          description: Manifest naming independently fetchable snapshots, receipts, and terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportManifest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/exports/{digest}:
+    get:
+      tags: [Export]
+      operationId: exportSnapshot
+      summary: Stream one sealed snapshot for export
+      description: Export never consults entitlement state.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/DigestPath"
+      responses:
+        "200":
+          description: Exact sealed snapshot bytes
+          headers:
+            Content-Length:
+              schema:
+                type: integer
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "410":
+          $ref: "#/components/responses/Gone"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/exports/receipts/{receiptId}:
+    get:
+      tags: [Export]
+      operationId: exportReceipt
+      summary: Fetch one signed erasure receipt
+      description: Export never consults entitlement state.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/ReceiptId"
+      responses:
+        "200":
+          description: Signed receipt bytes represented as JSON
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErasureReceipt"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/operations/{operationId}:
+    get:
+      tags: [Operations]
+      operationId: getOperationOutcome
+      summary: Reconcile a retained or erasure operation by its client-chosen ID
+      description: Reconciliation is always available after authentication.
+      security:
+        - holder: []
+          timestamp: []
+          nonce: []
+          signature: []
+      parameters:
+        - $ref: "#/components/parameters/OperationId"
+      responses:
+        "200":
+          description: Recorded operation outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    holder:
+      type: apiKey
+      in: header
+      name: X-Onym-Holder
+      description: Canonical `onym:seat-key:<64 lowercase hex>` holder reference.
+    timestamp:
+      type: apiKey
+      in: header
+      name: X-Onym-Timestamp
+      description: RFC3339 timestamp within the configured freshness window.
+    nonce:
+      type: apiKey
+      in: header
+      name: X-Onym-Nonce
+      description: Holder-scoped, single-use nonce.
+    signature:
+      type: apiKey
+      in: header
+      name: X-Onym-Signature
+      description: Standard padded Base64 Ed25519 request signature.
+
+  parameters:
+    OptionalEntitlement:
+      name: X-Onym-Entitlement
+      in: header
+      required: false
+      description: |
+        Standard padded Base64 of the exact SeatEntitlement JSON bytes. Ignored
+        by free operators. When present to a charging operator it is verified
+        and remembered for lapse calculations.
+      schema:
+        type: string
+        contentEncoding: base64
+    UploadId:
+      name: uploadId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChunkIndex:
+      name: index
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    DigestPath:
+      name: digest
+      in: path
+      required: true
+      description: Bare lowercase hexadecimal SHA-256 digest; do not include `sha256:`.
+      schema:
+        $ref: "#/components/schemas/BareSha256"
+    ReceiptId:
+      name: receiptId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{32}$"
+    OperationId:
+      name: operationId
+      in: path
+      required: true
+      description: Client-chosen identifier. The exact encoded path is covered by the signature.
+      schema:
+        type: string
+        minLength: 1
+    TermsFile:
+      name: termsFile
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{64}\\.json(?:\\.sig)?$"
+
+  responses:
+    BadRequest:
+      description: Malformed input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Invalid, stale, or replayed holder proof; or invalid presented entitlement
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    PaymentRequired:
+      description: A charging operator requires a usable entitlement
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PaymentRequiredError"
+    Conflict:
+      description: Current state conflicts with the requested operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Holder-scoped resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Gone:
+      description: Retention or receipt lifetime expired
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    PayloadTooLarge:
+      description: Request exceeded the route body limit or snapshot maximum
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+        text/plain:
+          schema:
+            type: string
+    InternalError:
+      description: Operator could not complete the request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Sha256Identifier:
+      type: string
+      pattern: "^sha256:[0-9a-f]{64}$"
+      examples: ["sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"]
+    BareSha256:
+      type: string
+      pattern: "^[0-9a-f]{64}$"
+      examples: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"]
+    HolderReference:
+      type: string
+      pattern: "^onym:seat-key:[0-9a-f]{64}$"
+    OperatorKey:
+      type: string
+      pattern: "^onym:key:[0-9a-f]{64}$"
+    ComponentId:
+      type: string
+      pattern: "^onym:component:.+$"
+    Base64Signature:
+      type: string
+      contentEncoding: base64
+      description: Standard padded Base64 encoding of a 64-byte Ed25519 signature.
+    Timestamp:
+      type: string
+      format: date-time
+    NullableTimestamp:
+      type: [string, "null"]
+      format: date-time
+    MissingChunkRange:
+      type: array
+      description: Inclusive `[first, last]` chunk-index range.
+      prefixItems:
+        - type: integer
+          format: int64
+          minimum: 0
+        - type: integer
+          format: int64
+          minimum: 0
+      minItems: 2
+      maxItems: 2
+
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, componentId, operator, declaredTerms, charges, revocation]
+      properties:
+        status:
+          const: ok
+        componentId:
+          $ref: "#/components/schemas/ComponentId"
+        operator:
+          $ref: "#/components/schemas/OperatorKey"
+        declaredTerms:
+          $ref: "#/components/schemas/Sha256Identifier"
+        charges:
+          type: boolean
+        revocation:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/RevocationHealth"
+    RevocationHealth:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status]
+          properties:
+            status:
+              const: unreadable
+        - type: object
+          additionalProperties: false
+          required: [status, pollIntervalSeconds]
+          properties:
+            status:
+              const: never_fetched
+            pollIntervalSeconds:
+              type: integer
+              format: int64
+        - type: object
+          additionalProperties: false
+          required: [status, epoch, publishedAt, fetchedAt, ageSeconds, pollIntervalSeconds, revokedCount]
+          properties:
+            status:
+              type: string
+              enum: [current, stale]
+            epoch:
+              type: integer
+              format: int64
+            publishedAt:
+              $ref: "#/components/schemas/Timestamp"
+            fetchedAt:
+              $ref: "#/components/schemas/Timestamp"
+            ageSeconds:
+              type: integer
+              format: int64
+              minimum: 0
+            pollIntervalSeconds:
+              type: integer
+              format: int64
+              minimum: 1
+            revokedCount:
+              type: integer
+              minimum: 0
+
+    ServiceManifest:
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - componentId
+        - seat
+        - operator
+        - backupProfileId
+        - implementationProfileId
+        - endpoints
+        - capabilities
+        - limits
+        - declaredTerms
+        - entitlementIssuers
+        - offers
+        - signature
+      properties:
+        version:
+          const: 1
+        componentId:
+          $ref: "#/components/schemas/ComponentId"
+        seat:
+          const: storage.backup
+        operator:
+          $ref: "#/components/schemas/OperatorKey"
+        backupProfileId:
+          const: onym:backup-profile:sealed-device-archive-v1
+        implementationProfileId:
+          const: onym:backup-implementation:object-http-v1
+        endpoints:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [uri, role]
+            properties:
+              uri:
+                type: string
+                format: uri
+              role:
+                const: read-write
+        capabilities:
+          type: array
+          prefixItems:
+            - const: upload
+            - const: list
+            - const: download
+            - const: erase
+            - const: export
+          minItems: 5
+          maxItems: 5
+        limits:
+          type: object
+          additionalProperties: false
+          required: [maximumSealedSnapshotBytes, maximumRetainedSnapshots]
+          properties:
+            maximumSealedSnapshotBytes:
+              type: integer
+              format: int64
+              minimum: 1
+            maximumRetainedSnapshots:
+              type: integer
+              format: int64
+              minimum: 1
+        declaredTerms:
+          $ref: "#/components/schemas/Sha256Identifier"
+        entitlementIssuers:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorKey"
+        offers:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [offerId, model]
+            properties:
+              offerId:
+                type: string
+              model:
+                const: subscription
+        signature:
+          $ref: "#/components/schemas/Base64Signature"
+
+    ImplementationProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - implementationVersion
+        - implementationProfileId
+        - backupProfileId
+        - digestSuite
+        - sealingSuite
+        - incrementModel
+        - authentication
+        - paymentRefusal
+      properties:
+        implementationVersion:
+          const: 1
+        implementationProfileId:
+          const: onym:backup-implementation:object-http-v1
+        backupProfileId:
+          const: onym:backup-profile:sealed-device-archive-v1
+        digestSuite:
+          const: sha-256/lowercase-hex
+        sealingSuite:
+          const: aes-256-gcm/hkdf-sha256-from-bip39-seed
+        incrementModel:
+          const: whole-snapshot-transfer-chunked-v1
+        authentication:
+          type: array
+          prefixItems:
+            - const: holder-scoped-capability/ed25519-request-bound-v1
+          minItems: 1
+          maxItems: 1
+        paymentRefusal:
+          const: onym-payment-required-v1
+
+    TermsDocument:
+      type: object
+      description: Signed content-addressed terms. Historical documents may add compatible fields.
+      required:
+        - termsVersion
+        - operator
+        - retention
+        - erasure
+        - jurisdictions
+        - subProcessors
+        - lawfulAccess
+        - breachDisclosure
+        - export
+        - shutdownNotice
+        - endOfPayment
+        - metadataRetention
+        - termsId
+        - signature
+      properties:
+        termsVersion:
+          const: 1
+        operator:
+          $ref: "#/components/schemas/OperatorKey"
+        retention:
+          type: object
+        erasure:
+          type: object
+          required: [acknowledgementDeadline, completionDeadline, scope, excluded]
+        jurisdictions:
+          type: array
+          items:
+            type: string
+        subProcessors:
+          type: array
+        lawfulAccess:
+          type: object
+        breachDisclosure:
+          type: object
+        export:
+          type: object
+        shutdownNotice:
+          type: string
+        endOfPayment:
+          type: object
+        metadataRetention:
+          type: object
+        termsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        signature:
+          $ref: "#/components/schemas/Base64Signature"
+
+    SeatEntitlement:
+      type: object
+      required:
+        - version
+        - type
+        - issuer
+        - audience
+        - subject
+        - offerId
+        - entitlementId
+        - notBefore
+        - expiresAt
+        - signature
+      properties:
+        version:
+          const: 1
+        type:
+          const: SeatEntitlement
+        issuer:
+          $ref: "#/components/schemas/OperatorKey"
+        audience:
+          $ref: "#/components/schemas/ComponentId"
+        subject:
+          $ref: "#/components/schemas/HolderReference"
+        offerId:
+          type: string
+        entitlementId:
+          type: string
+        notBefore:
+          $ref: "#/components/schemas/Timestamp"
+        expiresAt:
+          $ref: "#/components/schemas/Timestamp"
+        quota:
+          type: "null"
+          description: This implementation accepts subscription credentials only.
+        status:
+          type: string
+          format: uri
+        signature:
+          $ref: "#/components/schemas/Base64Signature"
+    RegisterEntitlementRequest:
+      type: object
+      additionalProperties: false
+      required: [version, entitlement]
+      properties:
+        version:
+          const: 1
+        entitlement:
+          $ref: "#/components/schemas/SeatEntitlement"
+    RegisterEntitlementResponse:
+      type: object
+      additionalProperties: false
+      required: [registered, entitlementId, expiresAt]
+      properties:
+        registered:
+          const: true
+        entitlementId:
+          type: string
+        expiresAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    SnapshotReference:
+      type: object
+      additionalProperties: false
+      required: [referenceVersion, algorithm, digest, sealedByteSize]
+      properties:
+        referenceVersion:
+          const: 1
+        algorithm:
+          const: sha-256/lowercase-hex
+        digest:
+          $ref: "#/components/schemas/Sha256Identifier"
+        sealedByteSize:
+          type: integer
+          format: int64
+          minimum: 1
+    PreflightSnapshotReference:
+      type: object
+      additionalProperties: false
+      required: [algorithm, digest, sealedByteSize]
+      properties:
+        algorithm:
+          const: sha-256/lowercase-hex
+        digest:
+          $ref: "#/components/schemas/Sha256Identifier"
+        sealedByteSize:
+          type: integer
+          format: int64
+          minimum: 1
+    PreflightRequest:
+      type: object
+      additionalProperties: false
+      required: [operationId, snapshotReference, acceptedTermsId]
+      properties:
+        operationId:
+          type: string
+          minLength: 1
+        snapshotReference:
+          $ref: "#/components/schemas/PreflightSnapshotReference"
+        acceptedTermsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        supersedes:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256Identifier"
+            - type: "null"
+    UploadGrant:
+      type: object
+      additionalProperties: false
+      required: [uploadId, chunkBytes, chunkCount, expiresAt, acceptedTermsId, missingChunks]
+      properties:
+        uploadId:
+          type: string
+          format: uuid
+        chunkBytes:
+          type: integer
+          format: int64
+          minimum: 1
+        chunkCount:
+          type: integer
+          format: int64
+          minimum: 1
+        expiresAt:
+          $ref: "#/components/schemas/Timestamp"
+        acceptedTermsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        missingChunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingChunkRange"
+
+    OutcomeEnvelope:
+      type: object
+      additionalProperties: false
+      required: [outcome]
+      properties:
+        outcome:
+          $ref: "#/components/schemas/RetentionOutcome"
+    RetentionOutcome:
+      type: object
+      additionalProperties: false
+      required: [componentId, status, snapshotReference, termsId]
+      properties:
+        componentId:
+          $ref: "#/components/schemas/ComponentId"
+        status:
+          type: string
+          enum: [retained, already_retained]
+        snapshotReference:
+          $ref: "#/components/schemas/SnapshotReference"
+        termsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+
+    SnapshotRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - snapshotReference
+        - acceptedTermsId
+        - retainedAt
+        - retainedUntil
+        - supersedes
+        - erasedAt
+        - status
+      properties:
+        snapshotReference:
+          $ref: "#/components/schemas/SnapshotReference"
+        acceptedTermsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        retainedAt:
+          $ref: "#/components/schemas/Timestamp"
+        retainedUntil:
+          $ref: "#/components/schemas/NullableTimestamp"
+        supersedes:
+          oneOf:
+            - $ref: "#/components/schemas/Sha256Identifier"
+            - type: "null"
+        erasedAt:
+          $ref: "#/components/schemas/NullableTimestamp"
+        status:
+          type: string
+          enum: [retained, retention_expired, erased]
+
+    EraseRequest:
+      type: object
+      additionalProperties: false
+      required: [operationId, scope]
+      properties:
+        operationId:
+          type: string
+          minLength: 1
+        scope:
+          oneOf:
+            - const: all
+            - $ref: "#/components/schemas/Sha256Identifier"
+    ErasureReceipt:
+      type: object
+      additionalProperties: false
+      required:
+        - receiptVersion
+        - receiptId
+        - operator
+        - scope
+        - snapshots
+        - acknowledgedAt
+        - completionCommittedBy
+        - coveredScope
+        - excludedScope
+        - termsId
+        - signature
+      properties:
+        receiptVersion:
+          const: 1
+        receiptId:
+          type: string
+          pattern: "^[0-9a-f]{32}$"
+        operator:
+          $ref: "#/components/schemas/OperatorKey"
+        scope:
+          oneOf:
+            - const: all
+            - $ref: "#/components/schemas/Sha256Identifier"
+        snapshots:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Sha256Identifier"
+        acknowledgedAt:
+          $ref: "#/components/schemas/Timestamp"
+        completionCommittedBy:
+          $ref: "#/components/schemas/Timestamp"
+        coveredScope:
+          type: string
+          minLength: 1
+        excludedScope:
+          type: string
+          minLength: 1
+        termsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        signature:
+          $ref: "#/components/schemas/Base64Signature"
+
+    ExportManifest:
+      type: object
+      additionalProperties: false
+      required: [exportVersion, exportedAt, operator, snapshots, receipts, terms]
+      properties:
+        exportVersion:
+          const: 1
+        exportedAt:
+          $ref: "#/components/schemas/Timestamp"
+        operator:
+          $ref: "#/components/schemas/OperatorKey"
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportSnapshot"
+        receipts:
+          type: array
+          items:
+            type: string
+            pattern: "^receipts/[0-9a-f]{32}\\.json$"
+        terms:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportTerms"
+    ExportSnapshot:
+      type: object
+      additionalProperties: false
+      required: [snapshotReference, acceptedTermsId, termsUrl, retainedAt, file]
+      properties:
+        snapshotReference:
+          $ref: "#/components/schemas/SnapshotReference"
+        acceptedTermsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        termsUrl:
+          type: string
+          format: uri
+        retainedAt:
+          $ref: "#/components/schemas/Timestamp"
+        file:
+          type: string
+          pattern: "^snapshots/[0-9a-f]{64}\\.seal$"
+    ExportTerms:
+      type: object
+      additionalProperties: false
+      required: [termsId, termsUrl, file, signature]
+      properties:
+        termsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        termsUrl:
+          type: string
+          format: uri
+        file:
+          type: string
+          pattern: "^terms/[0-9a-f]{64}\\.json$"
+        signature:
+          type: string
+          pattern: "^terms/[0-9a-f]{64}\\.json\\.sig$"
+
+    ReconciliationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [outcome]
+      properties:
+        outcome:
+          oneOf:
+            - $ref: "#/components/schemas/ReconciledRetentionOutcome"
+            - $ref: "#/components/schemas/ReconciledErasureOutcome"
+    ReconciledRetentionOutcome:
+      type: object
+      additionalProperties: false
+      required: [componentId, operationId, status, digest, recordedAt]
+      properties:
+        componentId:
+          $ref: "#/components/schemas/ComponentId"
+        operationId:
+          type: string
+        status:
+          const: retained
+        digest:
+          $ref: "#/components/schemas/Sha256Identifier"
+        recordedAt:
+          $ref: "#/components/schemas/Timestamp"
+    ReconciledErasureOutcome:
+      type: object
+      additionalProperties: false
+      required: [componentId, operationId, status, scope, recordedAt, receiptIds]
+      properties:
+        componentId:
+          $ref: "#/components/schemas/ComponentId"
+        operationId:
+          type: string
+        status:
+          const: erasure_acknowledged
+        scope:
+          oneOf:
+            - const: all
+            - $ref: "#/components/schemas/Sha256Identifier"
+        recordedAt:
+          $ref: "#/components/schemas/Timestamp"
+        receiptIds:
+          type: array
+          items:
+            type: string
+            pattern: "^[0-9a-f]{32}$"
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          enum:
+            - bad_request
+            - signature_invalid
+            - terms_changed
+            - payment_required
+            - invalid_entitlement
+            - snapshot_too_large
+            - quota_exceeded
+            - upload_incomplete
+            - upload_expired
+            - chunk_mismatch
+            - digest_mismatch
+            - snapshot_not_found
+            - upload_not_found
+            - operation_not_found
+            - terms_not_found
+            - receipt_not_found
+            - retention_expired
+            - receipt_expired
+            - internal_error
+        message:
+          type: string
+        currentTermsId:
+          $ref: "#/components/schemas/Sha256Identifier"
+        entitlementIssuers:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorKey"
+        maximumSealedSnapshotBytes:
+          type: integer
+          format: int64
+        retainedSnapshots:
+          type: integer
+          format: int64
+        maximumRetainedSnapshots:
+          type: integer
+          format: int64
+        retainedBytes:
+          type: integer
+          format: int64
+        limitBytes:
+          type: integer
+          format: int64
+        openGrants:
+          type: integer
+          format: int64
+        openGrantBytes:
+          type: integer
+          format: int64
+        missingChunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingChunkRange"
+        chunkCount:
+          type: integer
+          format: int64
+        paymentRequired:
+          $ref: "#/components/schemas/PaymentRequiredDetail"
+    PaymentRequiredError:
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required: [paymentRequired]
+          properties:
+            error:
+              const: payment_required
+            paymentRequired:
+              $ref: "#/components/schemas/PaymentRequiredDetail"
+    PaymentRequiredDetail:
+      type: object
+      additionalProperties: false
+      required: [version, componentId, offers, entitlementIssuers, manifestUrl]
+      properties:
+        version:
+          const: 1
+        componentId:
+          $ref: "#/components/schemas/ComponentId"
+        offers:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        entitlementIssuers:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OperatorKey"
+        manifestUrl:
+          type: string
+          format: uri

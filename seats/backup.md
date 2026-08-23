@@ -19,6 +19,12 @@ first profile, and so far the only one. An operator runs it at
 restore. What has never run is the paid half: nothing issues the
 credential it would check.
 
+The abstract types and outcomes on this page describe the seat boundary, not
+a second HTTP schema. Adapter and operator integrations must use the
+[implementation-derived operator API](backup-api.md); in particular,
+`terms_regression` and `erasure_unconfirmed` are client interpretations, not
+error codes returned by `onym-backup`.
+
 This page stays deliberately free of any one storage technology — so
 does the contract. A concrete implementation may use object storage, a
 content-addressed network, an institutional archive, removable media,
@@ -182,6 +188,8 @@ unusable.
   as a person when that secret is lost; no seat page exists yet for it.
 - [Object-HTTP](backup-object-http.md) — the one implementation profile
   that exists today.
+- [Operator API and OpenAPI](backup-api.md) — the current reference
+  operator's exact routes and wire shapes.
 - [Deployment](../deployment.md) — where the reference operator runs,
   and what its block volume needs before it will start.
 - [Courier](courier.md) — carries messages and blobs in motion; this
